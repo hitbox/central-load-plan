@@ -1,0 +1,10 @@
+{#- vim: set ft=jinja.html: -#}
+{#- ABX email template with header  -#}
+
+{%- extends "email_GB.txt" -%}
+
+
+{%- block header -%}
+{#- CLP Portal Notes.docx: Airline Code+Flight Number/date (scheduled dept UTC)/Departure/Destination #}
+{{- airline_iata_code }}{{ flight_number }}/{{ scheduled_departure_time.strftime('%d%b%y') }}U/{{ origin_iata }}/{{ destination_iata }}
+{%- endblock header -%}

@@ -1,0 +1,7 @@
+{% extends "from_xml/base.html" %}
+
+
+{% from "render.html" import render_by_type %}
+
+
+{% block main %}{{ render_by_type(config) }}{% endblock %}

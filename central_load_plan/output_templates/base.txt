@@ -1,0 +1,31 @@
+{#- vim: set ft=jinja.html: #}
+{#- base email template #}
+{%- set dtfmt = '%d/%H%M' %}
+{%- set tmfmt = '%H:%M' %}
+
+{%- block header %}{% endblock header -%}
+{%- block flight %}{% endblock flight -%}
+{%- block message1 %}
+*** ALL PAYLOAD AND FUEL DATA BELOW IN {{ '{' }}{{ unit_for_reporting }}{{ '}' }} ***
+*** BALLAST FUEL IS INCLUDED IN THE  RAMP FUEL VALUE ***
+{%- endblock message1 -%}
+{%- block fuel %}{% endblock fuel -%}
+{%- block weight %}{% endblock weight -%}
+
+{%- block crew %}{# crew is the same for all #}
+
+SEAT    FIRST NAME      LAST NAME       EMPLOYEE #
+----    ----------      ---------       ----------
+{%- if not crewmembers %}
+{{ '{:^52}'.format('No crew members') }}{% else -%}
+{%- for crew in crewmembers %}
+{{ '{seat:8}{first_name:16}{last_name:16}{employee_number:12}'.format(**crew) }}
+{%- endfor %}{% endif -%}
+{% endblock crew -%}
+
+{%- block equipment %}{% endblock equipment -%}
+{%- block message2 %}
+*** OFP IS THE CONTROLLING DOCUMENT FOR DATA PRODUCED FOR THIS MESSAGE. ***
+{%- endblock message2 -%}
+
+{%- block footer -%}{%- endblock footer -%}

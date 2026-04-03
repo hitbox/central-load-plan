@@ -1,0 +1,62 @@
+from markupsafe import Markup
+
+from central_load_plan.primary_key import get_pk_dict
+
+class TableColumn:
+    """
+    Given an instance of a model provide header and value text for html.
+    """
+
+    def __init__(self, header, attr, cast=None):
+        self.header = header
+        self.attr = attr
+        self.cast = cast
+
+    def valueof(self, instance):
+        if self.cast:
+            value = self.cast(instance)
+        else:
+            value = deep_getattr(instance, self.attr)
+        return value
+
+
+class Table:
+
+    def __init__(self, columns, model, row_endpoint=None):
+        self.columns = columns
+        self.model = model
+        self.row_endpoint = row_endpoint
+
+    def get_pk_dict(self, instance):
+        return get_pk_dict(instance)
+
+
+def render_object(obj, html=None):
+    if html is None:
+        html = []
+    if isinstance(obj, dict):
+        html.append('<dl>')
+        for key, value in obj.items():
+            html.append(f'<dt>{key}</dt>')
+            html.append(f'<dd>{render_object(value, html=html)}</dd>')
+        html.append('</dl>')
+    elif isinstance(obj, list):
+        html.append(f'<ul>')
+        for item in obj:
+            html.append(f'<li>{render_object(item, html=html)}</li>')
+        html.append(f'</ul>')
+    else:
+        return str(obj)
+    return Markup(''.join(html))
+
+def yesno(value):
+    if value is True:
+        return Markup('<span class="boolean-yes">Yes</span>')
+    else:
+        return Markup('<span class="boolean-no">No</span>')
+
+def deep_getattr(obj, name):
+    names = name.split('.')
+    for name in names:
+        obj = getattr(obj, name)
+    return obj

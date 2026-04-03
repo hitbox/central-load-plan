@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+
+{% from "render.html" import render_form2 %}
+{% from "render.html" import render_table %}
+
+
+{% block main %}
+    {% if model is defined %}
+    <h3>{{ model.__name__ }} objects</h3>
+    {% endif %}
+    <form method="GET">
+        {{ render_form2(filter_form) }}
+        <a href="{{ url_for(request.endpoint) }}">Clear filter</a>
+    </form>
+    <table>
+        <thead>
+            <tr>{% for column in table.columns %}
+                <th>{{ column.header }}</th>{% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% if not pagination.items %}
+                <tr><td colspan="{{ table.columns|length }}">No {% if model is defined %} {{ model.__name__ }}{% endif %} objects</td></tr>
+            {% else %}
+                {% for instance in pagination %}<tr{% if edit_endpoint is defined %} data-href="{{ url_for(edit_endpoint, id=instance.id) }}"{% endif %}>
+                {% for column in table.columns %}<td>{{ column.valueof(instance) }}</td>{% endfor %}
+            </tr>{% endfor %}
+            {% endif %}
+            {% if create_endpoint is defined %}
+            <tr>
+                <td colspan="{{ table.columns|length }}"><a href="{{ url_for(create_endpoint) }}">Create new</a></td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    <div class=pagination>{% for page in pagination.iter_pages() %}
+        {% if page %}
+            {% if page != pagination.page %}
+                 <a href="{{ url_for(request.endpoint, page=page) }}">{{ page }}</a>
+            {% else %}
+                <strong>{{ page }}</strong>
+            {% endif %}
+        {% else %}
+            <span class=ellipsis>…</span>
+        {% endif %}
+    {% endfor %}</div>
+{% endblock main %}

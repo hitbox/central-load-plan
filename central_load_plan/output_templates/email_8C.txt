@@ -1,0 +1,53 @@
+{#- vim: set ft=jinja.html: -#}
+{%- extends "base.txt" -%}
+{#- ATI email template -#}
+
+
+{%- block flight %}
+
+LEG DEPARTURE DATE (UTC): {{ leg_departure_date_utc.strftime('%d%b%y (%H%MZ)').upper() }} VER NO: {{ flight_plan_id }}
+FLT #  ORIG  DEST  TAIL #  STE   STD      ETE    PLANNED BLOCK TIME
+{# "FLT #" #}{{ '%-7s'|format(flight_number) -}}
+{# ORIG #}{{ '%-6s'|format(origin_iata) -}}
+{# DEST #}{{ '%-6s'|format(destination_iata) -}}
+{# "TAIL #" #}{{ '%-8s'|format(aircraft_registration) -}}
+{# STE: scheduled time enroute #}{{ '%-6s'|format(estimated_block_time.strftime(tmfmt)) -}}
+{# STD #}{{ '%-9s'|format(scheduled_departure_time.strftime(dtfmt)) -}}
+{# ETE #}{{ '%-7s'|format(estimated_time_enroute.strftime(tmfmt)) -}}
+{# "PLANNED BLOCK TIME" #}{{ estimated_block_time.strftime(tmfmt) }}
+{% endblock flight -%}
+
+
+{%- block fuel %}
+
+PLND PAYLOAD    RAMP FUEL   FUEL BURN   TAXI FUEL   UNUSABLE FUEL
+{{ '{:16}'.format(planned_payload|string) -}}
+{{ '{:12}'.format(ramp_fuel|string) -}}
+{{ '{:12}'.format(fuel_burn|string) -}}
+{{ '{:12}'.format(taxi_fuel|string) -}}
+{% if ballast_fuel is none %}00000{% else %}{{ '{:12}'.format(ballast_fuel|string) }}{% endif -%}
+{% endblock fuel -%}
+
+
+{%- block weight %}
+
+MAX PAYLOAD   MZFW      MTOW       MLDG      OEW/BOW
+{{ '{:14}'.format(max_payload|string) -}}
+{{ '{:10}'.format(mzfw|string) -}}
+{{ '{:11}'.format(mtow|string) -}}
+{{ '{:10}'.format(mldg|string) -}}
+{{ dow -}}
+{% endblock weight -%}
+
+
+{%- block equipment %}
+
+--- A/C EQUIPMENT STATUS ---
+ITEM          DESCRIPTION
+{%- for status in aircraft_equipment_status|sort(attribute='fak_status') %}
+{{ '{:14}'.format(status.item) -}}
+{% if status.description %}{# see central_load_plan.email NOTES 1 #}{{
+    fullv1(status, width=80-14, subsequent_indent=' '*14)
+}}{% endif %}
+{% endfor %}
+{% endblock equipment -%}

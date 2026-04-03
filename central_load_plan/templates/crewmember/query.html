@@ -1,0 +1,80 @@
+{% extends "crewmember/base.html" %}
+
+
+{% from "render.html" import render_form2 %}
+
+
+{% block content %}
+<nav>{% for text, data in interesting_data %}
+    <h3><a href="{{ url_for('crewmember.query', **data) }}">{{ text }}</a></h3>{% endfor %}
+</nav>
+
+<div>
+    <p>Criteria for archived EFF XML files.</p>
+    <form action="{{ url_for('crewmember.query') }}" method="GET">
+        {{ render_form2(eff_archive_form) }}
+    </form>
+</div>
+
+{% if eff_paths is defined and not eff_paths %}
+    <p>No results</p>
+{% else %}
+    <p>List of matching archived EFF files</p>
+    <p>Click row to parse OFP XML file</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Archive Date</th>
+                <th>Origin</th>
+                <th>Dest.</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody>{% for path_data in eff_paths %}
+                {% set row_url = url_for('crewmember.from_data', airline_code=path_data.airline_code, archive_date=path_data.archive_date, origin=path_data.origin, destination=path_data.destination, timestamp=path_data.timestamp) %}
+                <tr data-href="{{ row_url }}">
+                    <td>{{ path_data.archive_date }}</td>
+                    <td>{{ path_data.origin }}</td>
+                    <td>{{ path_data.destination }}</td>
+                    <td>{{ path_data.timestamp }}</td>
+            </tr>{% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+{% if result %}
+{# Results from POST #}
+<h2>Results</h2>
+<div class="flight-info">
+    <div class="data" title="Airline IATA">{{ result.data.airline_iata_code }}</div>
+    <div class="data" title="Origin Date">{{ result.data.flight_origin_date }}</div>
+    <div class="data" title="Flight Number">{{ result.data.flight_number }}</div>
+    <div class="data" title="Origin IATA">{{ result.data.origin_iata }}</div>
+    <div class="data" title="Scheduled Departure">{{ result.data.scheduled_departure_time }}</div>
+</div>
+<table>
+    <thead>
+        <tr>
+            <th>Last</th>
+            <th>First</th>
+            <th>Employee #</th>
+            <th>Seat</th>
+            <th>Order</th>
+            <th>Source</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for crewmember in result.crewmembers|sort(attribute='seat_order') %}<tr>
+            <td class="data">{{ crewmember.last_name }}</td>
+            <td class="data">{{ crewmember.first_name }}</td>
+            <td class="data">{{ crewmember.employee_number }}</td>
+            <td class="data">{{ crewmember.seat }}</td>
+            <td class="data">{{ crewmember.seat_order }}</td>
+            <td class="data">{{ crewmember.source }}</td>
+        </tr>{% endfor %}
+    </tbody>
+</table>
+{% elif request.method == 'POST' %}
+<h2>No results</h2>
+{% endif %}
+{% endblock content %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+
+{% from "render.html" import render_form2 %}
+
+
+
+{% block main %}
+<h1>Login</h1>
+<form method="POST">
+    {{ render_form2(login_form) }}
+</form>
+{% endblock %}

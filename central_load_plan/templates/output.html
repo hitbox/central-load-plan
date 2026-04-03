@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% from "render.html" import render_form %}
+
+{% block main %}
+<h2>Sample files</h2>
+{{ render_form(form) }}
+{% if result %}<div>
+    <h1>Output</h1>
+    <h2>Airline: {{ result.data.airline_iata_code }}</h2>
+    <h3>Email Body Text</h3>
+    <pre>{{ result.email_body }}</pre>
+    <h3>Scraped Data</h3>
+    <pre>{{ result.pprint_data }}</pre>
+    <h3>XML</h3>
+    <pre>{{ result.xmlstring }}</pre>
+{% endif %}</div>
+{% endblock %}

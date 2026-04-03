@@ -1,0 +1,30 @@
+{% extends "from_xml/base.html" %}
+
+
+{% from "render.html" import render_form2 %}
+
+
+{% block content %}
+<main>
+    <table>
+        <thead>
+            <tr>
+                <th>Airline</th>
+                <th title="Origin Date">Date</th>
+                <th>Flight</th>
+                <th title="Origin IATA">Origin</th>
+                <th title="Scheduled Departure">Sch. Dep.</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in database|sort(attribute='flight_origin_date,scheduled_departure_time,flight_number', reverse=true) %}<tr data-href="{{ url_for('xml.view', index=data.index) }}">
+                <td class="data">{{ data.airline_iata_code }}</td>
+                <td class="data">{{ data.flight_origin_date }}</td>
+                <td class="data">{{ data.flight_number }}</td>
+                <td class="data">{{ data.origin_iata }}</td>
+                <td class="data">{{ data.scheduled_departure_time }}</td>
+            </tr>{% endfor %}
+        </tbody>
+    </table>
+</main>
+{% endblock content %}

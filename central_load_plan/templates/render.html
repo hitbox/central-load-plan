@@ -1,0 +1,100 @@
+
+{% macro render_form(form) %}
+<form action="{{ kwargs.action or url_for(request.endpoint, **request.view_args) }}"{% if kwargs.enctype %} enctype="{{ kwargs.enctype }}"{% endif %} method="{{ kwargs.method or 'POST' }}">
+    {% for field in form|rejectattr('type', 'in', ['SubmitField']) %}{{ render_field(field) }}{% endfor %}
+    <div class="inputgroup">
+        {% for field in form|selectattr('type', 'in', ['SubmitField']) %}{{ field }}{% endfor %}
+    </div>
+</form>
+{% endmacro %}
+
+
+{% macro render_form2(form) %}
+    {% if form.errors %}<div>{{ form.errors }}</div>{% endif %}
+    <div class="grid-2">
+    {% for field in form | rejectattr('type', 'in', ['SubmitField']) %}
+    {{ render_field(field) }}
+    {% endfor %}
+    </div>
+    <div class="buttons">
+        {% for field in form|selectattr('type', 'in', ['SubmitField']) %}{{ field }}{% endfor %}
+    </div>
+{% endmacro %}
+
+
+{% macro render_field(field) %}
+    {% set field, label = field, field.label %}
+    {% if field.type == 'BooleanField' %}{% set field, label = label, field %}{% endif %}
+    <div>{{ label }}</div>
+    <div>
+        {{ field }}
+        {% if field.errors %}
+            <ul class="errors">{% for error in field.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}</ul>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+
+{% macro render_by_type(obj) %}
+{% if obj is iterable and obj is not string and obj is not mapping %}
+{# list, tuple, ... #}<code>[</code><ul class="literal">{{ render_iterable(obj) }}</ul><code>]</code>{% elif obj is mapping %}
+{# dict, ... #}<code>{</code><dl class="literal">{{ render_dict(obj) }}</dl><code>}</code>{% elif obj is string %}<code>'{{ obj }}'</code>{% else %}{{ obj }}{% endif %}
+{% endmacro %}
+
+
+{% macro render_dict(d) %}
+{% for key, val in d.items()|sort %}<dt class="data">{{ render_by_type(key) }}</dt><dd class="data">{{ render_by_type(val) }}</dd>{% endfor %}{% endmacro %}
+
+
+{% macro render_iterable(iterable) %}
+{% for item in iterable %}<li>{{ render_by_type(item) }}</li>{% endfor %}
+{% endmacro %}
+
+
+
+{% macro render_pagination(pagination, endpoint) %}
+    {% for page in pagination.iter_pages() %}
+        {% if page %}
+            {% if page != pagination.page %}
+                 <a href="{{ url_for(endpoint, page=page, **kwargs) }}">{{ page }}</a>
+            {% else %}
+                <strong>{{ page }}</strong>
+            {% endif %}
+        {% else %}
+            <span class=ellipsis>…</span>
+        {% endif %}
+    {% endfor %}
+{% endmacro %}
+
+
+{% macro render_table(table, pagination) %}
+    <thead>
+        <tr>{% for column in table.columns %}
+            <th>{{ column.header }}</th>{% endfor %}
+        </tr>
+        <tr>
+            <th>{{ table.row_endpoint }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if not pagination.items %}
+            <tr><td colspan="{{ table.columns|length }}">No {{ table.model.__name__ }} objects</td></tr>
+        {% else %}
+            {% for instance in pagination %}
+            {% if edit_endpoint is defined %}
+                {% set data_href =  url_for(edit_endpoint, **table.get_pk_dict(instance)) %}
+            {% elif table.row_endpoint %}
+                {% set data_href = url_for(table.row_endpoint, **table.get_pk_dict(instance)) %}
+            {% endif %}
+            <tr{% if data_href is defined %} data-href="{{ data_href }}"{% endif %}>
+                {% for column in table.columns %}<td>{{ column.valueof(instance) }}</td>{% endfor %}
+            </tr>{% endfor %}
+        {% endif %}
+    </tbody>
+    {% if create_endpoint is defined %}<tr>{# add create object table row #}
+        <td colspan="{{ table.columns|length }}"><a href="{{ url_for(create_endpoint) }}">Create new</a></td>
+    </tr>{% endif %}
+    <div class="pagination">{{ render_pagination(pagination, request.endpoint, **request.view_args) }}</div>
+{% endmacro %}

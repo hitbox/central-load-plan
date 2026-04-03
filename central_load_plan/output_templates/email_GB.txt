@@ -1,0 +1,59 @@
+{#- vim: set ft=jinja.html: -#}
+{%- extends "base.txt" -%}
+{#- ABX email template -#}
+
+
+{%- block flight %}
+
+LEG DEPARTURE DATE (UTC): {{ leg_departure_date_utc.strftime('%d%b%y (%H%MZ)').upper() }} VER NO: {{ flight_plan_id }}
+FLT #  ORIG  DEST  TAIL #  STE   STD      ETD    ETA
+{# "FLT #" #}{{ '%-7s'|format(flight_number) -}}
+{# ORIG #}{{ '%-6s'|format(origin_iata) -}}
+{# DEST #}{{ '%-6s'|format(destination_iata) -}}
+{# "TAIL #" #}{{ '%-8s'|format(aircraft_registration) -}}
+{# STE #}{{ '%-6s'|format(estimated_block_time.strftime(tmfmt)) -}}
+{# STD #}{{ '%-9s'|format(scheduled_departure_time.strftime(dtfmt)) -}}
+{# ETD #}{{ '%-7s'|format(estimated_departure_time.strftime(tmfmt)) -}}
+{# ETA #}{{ estimated_arrival_time.strftime(dtfmt) }}
+{% endblock flight -%}
+
+
+{%- block fuel %}
+
+PLND PAYLOAD    RAMP FUEL   FUEL BURN   TAXI FUEL   BALLAST FUEL
+{{ '{:16}'.format(planned_payload|string) -}}
+{{ '{:12}'.format(ramp_fuel|string) -}}
+{{ '{:12}'.format(fuel_burn|string) -}}
+{{ '{:12}'.format(taxi_fuel|string) -}}
+{% if ballast_fuel is none %}00000{% else %}{{ '{:12}'.format(ballast_fuel|string) }}{% endif -%}
+{% endblock fuel -%}
+
+
+{%- block weight %}
+
+MAX PAYLOAD     MZFW        MTOW        MLDG
+{{ '{:16}'.format(max_payload|string) -}}
+{{ '{:12}'.format(mzfw|string) -}}
+{{ '{:12}'.format(mtow|string) -}}
+{{ '{:10}'.format(mldg|string) -}}
+{% endblock weight -%}
+
+
+{%- block equipment %}
+
+--- A/C EQUIPMENT STATUS ---
+ITEM          DESCRIPTION
+{%- for status in aircraft_equipment_status %}
+{{ '{:14}'.format(status.item) -}}
+{% if status.description %}{{
+    '\n'.join(
+        textwrap.wrap(status.description, width=80 - 14, subsequent_indent=' ' * 14)
+    )
+}}{% endif %}{% endfor %}
+{% endblock equipment -%}
+
+
+{%- block footer %}
+
+ABX COMAT will NOT be shipped in the OPEN AREA of the bulk pit on ABX aircraft.
+{%- endblock -%}

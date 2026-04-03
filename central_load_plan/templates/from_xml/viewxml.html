@@ -1,0 +1,13 @@
+{% extends "from_xml/base.html" %}
+
+
+{% from "render.html" import render_by_type %}
+
+
+{% block content %}
+<h3><a href="{{ url_for('.list') }}">Back to list</a></h3>
+<h2>Email Message</h2>
+<pre class="rendered-message">{{ message }}</pre>
+<h2>XML Data</h2>
+{{ render_by_type(xmldata) }}
+{% endblock content %}

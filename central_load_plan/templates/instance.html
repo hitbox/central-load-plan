@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+
+{% block main %}
+    <h1>{{ model.__name__ }}</h1>
+    {% if model.__doc__ %}<p>{{ model.__doc__ }}</p>{% endif %}
+    <table>
+        <thead>
+            <tr>
+                <th>Column</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>{% for column in model.__mapper__.columns %}
+            <tr>
+                <td>{{ column.name }}</td>
+                <td>{{ instance| attr(column.name) }}</td>
+            </tr>{% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

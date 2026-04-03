@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+
+{% block main %}
+    <h3><a href="{{ url_for('index') }}">Index</a></h3>
+    <h2>From XML</h2>
+    {% block content %}{% endblock %}
+{% endblock main %}

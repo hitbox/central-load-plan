@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+
+{% from "render.html" import render_table %}
+{% from "render.html" import render_form2 %}
+
+
+{% block main %}
+    {% if request.form %}<pre>{{ request.form }}</pre>{% endif %}
+    <h3>Edit {{ model.__name__ }}</h3>
+    <p>{{ model.__doc__ }}</p>
+    <form method="POST">
+        {{ render_form2(form)}}
+    </form>
+    {% if query is defined %}
+    <div>
+        <h4>Query</h4>
+        <p>Query for OFP files driven from the above condition</p>
+        <pre style="white-space: pre-wrap;">{{ query }}</pre>
+    </div>
+    {% endif %}
+    {% if preview_results is defined %}
+    <div>
+        <h4>Results</h4>
+        <p>The results of the query created from the condition</p>
+        <table>
+            {{ render_table(table, preview_results) }}
+        </table>
+    </div>
+    {% endif %}
+{% endblock main %}
