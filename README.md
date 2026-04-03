@@ -1,7 +1,5 @@
 # central-load-plan
 
-# central-load-plan
-
 **Python 3**
 
 `central-load-plan` watches a network location for files and generates configured output such as emails and other files.
