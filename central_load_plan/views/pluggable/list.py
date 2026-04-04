@@ -17,30 +17,28 @@ class ListView(View):
 
     def __init__(
         self,
-        pagination_factory,
         template,
         table,
-        filter_form = None,
+        query_form_manager,
         edit_endpoint = None,
         create_endpoint = None,
     ):
-        self.pagination_factory = pagination_factory
         self.template = template
         self.table = table
-        self.filter_form = filter_form
+        self.query_form_manager = query_form_manager
         self.edit_endpoint = edit_endpoint
         self.create_endpoint = create_endpoint
 
     def dispatch_request(self, **kwargs):
-        pagination = self.pagination_factory()
+        pagination, query = self.query_form_manager.get_pagination()
         context = {
             'table': self.table,
             'pagination': pagination,
+            'query': query,
         }
 
-        if self.filter_form:
-            filter_form = self.filter_form(request.args)
-            context['filter_form'] = filter_form
+        context['filter_form'] = self.query_form_manager.get_filter_form()
+        context['sort_form'] = self.query_form_manager.get_sort_form()
 
         # Add remaining to context if is not None
         for name in ['edit_endpoint', 'create_endpoint']:

@@ -1,0 +1,15 @@
+flask
+flask-login
+flask-sqlalchemy
+flask-wtf
+jinja2
+lxml
+marshmallow
+marshmallow-sqlalchemy
+oracledb
+passlib[argon2]
+psycopg
+sqlalchemy
+sqlparse
+wtforms
+wtforms-sqlalchemy

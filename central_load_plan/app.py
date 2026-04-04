@@ -6,6 +6,7 @@ from flask import url_for
 from . import converter
 from . import extension
 from . import views
+from . import template_filter
 
 CONFIG_PREFIX = 'CENTRAL_LOAD_PLAN'
 
@@ -19,6 +20,7 @@ def create_app():
     extension.init_app(app)
     converter.init_app(app)
     views.init_app(app)
+    template_filter.init_app(app)
 
     @app.route('/')
     def index():

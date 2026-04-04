@@ -6,7 +6,33 @@ from wtforms import SelectField
 from central_load_plan.extension import db
 from central_load_plan.models import OFPFile
 
-class OFPFileFilterForm(Form):
+class QueryFormMixin:
+
+    sorting_choices = ['', 'asc', 'desc']
+
+    @property
+    def request_args(self):
+        return {field.name: field.data for field in self}
+
+
+class OFPFileSortForm(QueryFormMixin, Form):
+
+    airline_iata_code = SelectField()
+
+    flight_origin_date = SelectField()
+
+    origin_iata = SelectField()
+
+    destination_iata = SelectField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        for field in self:
+            field.choices = self.sorting_choices
+
+
+class OFPFileFilterForm(QueryFormMixin, Form):
 
     airline_iata_code = SelectField()
 
@@ -40,3 +66,10 @@ class OFPFileFilterForm(Form):
         self.origin_iata.choices = iata_stations
 
         self.destination_iata.choices = iata_stations
+
+        min_origin_date = db.session.scalars(db.select(db.func.min(OFPFile.flight_origin_date))).one()
+        max_origin_date = db.session.scalars(db.select(db.func.max(OFPFile.flight_origin_date))).one()
+        self.flight_origin_date.render_kw = {
+            'min': min_origin_date,
+            'max': max_origin_date,
+        }

@@ -127,3 +127,8 @@ def literal_sql(query, dialect):
         compile_kwargs = {"literal_binds": True}
     )
 
+def deep_getattr(obj, name):
+    names = name.split('.')
+    for name in names:
+        obj = getattr(obj, name)
+    return obj

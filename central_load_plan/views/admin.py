@@ -1,17 +1,11 @@
 import click
 
 from flask import Blueprint
-from flask import current_app
-from flask import flash
-from flask import jsonify
-from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
 from flask_login import current_user
 from markupsafe import Markup
-
-from sqlalchemy.exc import NoResultFound
 
 from central_load_plan.extension import db
 from central_load_plan.extension import login_manager
@@ -20,18 +14,20 @@ from central_load_plan.form import JobTemplateForm
 from central_load_plan.form import JobTypeForm
 from central_load_plan.form import OFPConditionForm
 from central_load_plan.form import OFPFileFilterForm
+from central_load_plan.form import OFPFileSortForm
 from central_load_plan.form import UserForm
 from central_load_plan.html import Table
 from central_load_plan.html import TableColumn
+from central_load_plan.html import unordered_list
 from central_load_plan.html import yesno
 from central_load_plan.models import Email
 from central_load_plan.models import Job
 from central_load_plan.models import JobTemplate
 from central_load_plan.models import JobType
 from central_load_plan.models import OFPCondition
-from central_load_plan.models import OFPConditionValue
 from central_load_plan.models import OFPFile
 from central_load_plan.models import User
+from central_load_plan.query_form_manager import QueryFormManager
 
 from .model_rule import add_url_rule_for_table_listing
 from .model_rule import add_url_rule_for_creating
@@ -226,37 +222,29 @@ add_url_rule_for_editing(
 
 ofp_file_admin_blueprint = Blueprint('ofp_file', __name__)
 
-def ofp_files_pagination():
-    query = (
-        db.select(OFPFile)
-        .order_by(
-            OFPFile.flight_origin_date.desc(),
-            OFPFile.archive_path,
-        )
-    )
+ofp_files_query_form_manager = QueryFormManager(
+    model = OFPFile,
+    filter_form_class = OFPFileFilterForm,
+    sort_form_class = OFPFileSortForm,
+)
 
-    form = OFPFileFilterForm(request.args)
-
-    for field in form:
-        if hasattr(OFPFile, field.name):
-            if field.data:
-                query = query.where(
-                    getattr(OFPFile, field.name) == field.data,
-                )
-
-    return db.paginate(query)
+def mdy_format(ofp_file):
+    return ofp_file.flight_origin_date.strftime('%d%b%y')
 
 add_url_rule_for_table_listing(
     ofp_file_admin_blueprint,
     '/ofp-file',
-    pagination_factory = ofp_files_pagination,
     template = 'table_with_filter.html',
-    filter_form = OFPFileFilterForm,
-    edit_endpoint = 'job_template.from_ofp_file',
-    create_endpoint = None,
+    query_form_manager = ofp_files_query_form_manager,
+    edit_endpoint = 'job_template.list_matching_job_templates',
     table = Table(
         model = OFPFile,
         columns = [
+            # Showing the same fields we can filter by.
+            TableColumn('Airline', 'airline_iata_code'),
+            TableColumn('Date', 'flight_origin_date', cast=mdy_format),
+            TableColumn('Orig.', 'origin_iata'),
+            TableColumn('Dest.', 'destination_iata'),
             TableColumn('Path', 'display_path'),
         ],
     ),
@@ -356,20 +344,19 @@ def root():
     List of links to database objects' admin pages.
     """
     links = [
-        ('Users', url_for('.users.list')),
-        ('Emails', url_for('.emails.list')),
-        ('OFPCondition', url_for('.ofp_condition.list')),
-        ('JobType', url_for('.job_type.list')),
-        ('JobTemplate', url_for('.job_template.list')),
-        ('OFPFile', url_for('.ofp_file.list')),
+        Markup(f'<a href="{url_for(".users.list")}">Users</a>'),
+        Markup(f'<a href="{url_for(".emails.list")}">Emails</a>'),
+        Markup(f'<a href="{url_for(".ofp_condition.list")}">OFPCondition</a>'),
+        Markup(f'<a href="{url_for(".job_type.list")}">JobType</a>'),
+        Markup(f'<a href="{url_for(".job_template.list")}">JobTemplate</a>'),
+        Markup(f'<a href="{url_for(".ofp_file.list")}">OFPFile</a>'),
     ]
 
-    html = ['<ul>']
-    for text, link in links:
-        html.append(f'<li><a href="{link}">{text}</a></li>')
-    html.append('</ul>')
+    context = {
+        'markup': unordered_list(links),
+    }
 
-    return render_template('basic.html', markup=Markup(''.join(html)))
+    return render_template('basic.html', **context)
 
 # Map models to forms
 MODEL_FORM_MAP = {

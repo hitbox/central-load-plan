@@ -8,14 +8,12 @@ from central_load_plan.views.pluggable import ListView
 def add_url_rule_for_table_listing(
     blueprint,
     rule,
-    pagination_factory,
     **view_kwargs
 ):
     blueprint.add_url_rule(
         rule,
         view_func = ListView.as_view(
             'list',
-            pagination_factory,
             **view_kwargs
         )
     )

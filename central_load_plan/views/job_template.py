@@ -31,8 +31,8 @@ def index():
     return redirect(url_for('.query'))
 
 
-@job_template_bp.route('/from-ofp-file/<uuid:id>')
-def from_ofp_file(id):
+@job_template_bp.route('/job-templates-from-ofp-file/<uuid:id>')
+def list_matching_job_templates(id):
     """
     Matching job templates from ofp file.
     """
@@ -51,7 +51,9 @@ def from_ofp_file(id):
             matches.append(Markup(f'<a href="{href}">{job_template.name}</a>'))
 
     context = {
-        'title': Markup(f'Matching jobs for file <pre>{ ofp_file.archive_path }</pre>'),
+        'page_title': Markup(
+            f'Matching jobs for file <pre class="value">{ ofp_file.archive_path }</pre>'
+        ),
         'list_items': matches,
     }
     return render_template('unordered_list.html', **context)
@@ -69,8 +71,6 @@ def preview_job_template_for_file(job_template_id, ofp_file_id):
     ofp_file = db.session.get(OFPFile, ofp_file_id)
     if ofp_file is None:
         abort(404)
-
-    #ofp_file.update_from_path(db.session, ofp_file.archive_path)
 
     context = {
         'markup': job_template.html_preview(ofp_file),

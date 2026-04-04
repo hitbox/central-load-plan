@@ -43,7 +43,7 @@ def fullv1(status, **textwrap_options):
     De-duplicate the item number from the description. Look for an place on a
     newline, the text "Expiration Date:" and everything after it.
     """
-    description = clean_remove(status['item'], status['description'])
+    description = clean_remove(status.item, status.description)
 
     items = description.rpartition('Expiration Date:')
     before, expdate, after = items

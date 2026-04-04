@@ -2,7 +2,7 @@
 
 
 {% block main %}
-    {% if title is defined %}<h3>{{ title }}</h3>{% endif %}
+    {% if page_title is defined %}<h3>{{ page_title }}</h3>{% endif %}
     <ul>{% for list_item in list_items %}
         <li>{{ list_item }}</li>{% endfor %}
     </ul>

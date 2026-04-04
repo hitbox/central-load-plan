@@ -2,6 +2,7 @@
 
 
 {% from "render.html" import render_form2 %}
+{% from "render.html" import render_pagination %}
 {% from "render.html" import render_table %}
 
 
@@ -9,10 +10,25 @@
     {% if model is defined %}
     <h3>{{ model.__name__ }} objects</h3>
     {% endif %}
-    <form method="GET">
-        {{ render_form2(filter_form) }}
-        <a href="{{ url_for(request.endpoint) }}">Clear filter</a>
-    </form>
+    <div>
+        <form method="GET">
+            <h3>Sorting</h3>
+            {{ render_form2(sort_form) }}
+            <h3>Filter</h3>
+            {{ render_form2(filter_form) }}
+            <p>
+                <a href="{{ url_for(request.endpoint) }}">Clear filter and sort</a>
+            </p>
+        </form>
+    </div>
+    {% if false %}
+    <h3>SQL</h3>
+    <pre class="value">{{ query }}</pre>
+    {% endif %}
+    <div class="pagination-container">
+    {% set form_args = sort_form.request_args | combine(filter_form.request_args) %}
+    {{ render_pagination(pagination, request.endpoint, **form_args) }}
+    </div/>
     <table>
         <thead>
             <tr>{% for column in table.columns %}
@@ -34,15 +50,7 @@
             {% endif %}
         </tbody>
     </table>
-    <div class=pagination>{% for page in pagination.iter_pages() %}
-        {% if page %}
-            {% if page != pagination.page %}
-                 <a href="{{ url_for(request.endpoint, page=page) }}">{{ page }}</a>
-            {% else %}
-                <strong>{{ page }}</strong>
-            {% endif %}
-        {% else %}
-            <span class=ellipsis>…</span>
-        {% endif %}
-    {% endfor %}</div>
+    <div class="pagination-container">
+    {{ render_pagination(pagination, request.endpoint, **form_args) }}
+    </div>
 {% endblock main %}

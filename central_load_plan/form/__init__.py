@@ -33,6 +33,7 @@ from central_load_plan.field import JSONField
 
 from .job_template import JobTemplateForm
 from .ofp_file import OFPFileFilterForm
+from .ofp_file import OFPFileSortForm
 
 JobTypeForm = model_form(JobType, db_session=db.session)
 

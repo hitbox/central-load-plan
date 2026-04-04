@@ -1,6 +1,7 @@
 from markupsafe import Markup
 
 from central_load_plan.primary_key import get_pk_dict
+from central_load_plan.utils import deep_getattr
 
 class TableColumn:
     """
@@ -55,8 +56,12 @@ def yesno(value):
     else:
         return Markup('<span class="boolean-no">No</span>')
 
-def deep_getattr(obj, name):
-    names = name.split('.')
-    for name in names:
-        obj = getattr(obj, name)
-    return obj
+def unordered_list(iterable):
+    """
+    Return items in iterable as html <ul>.
+    """
+    html = ['<ul>']
+    for item in iterable:
+        html.append(f'<li>{item}</li>')
+    html.append('</ul>')
+    return Markup(''.join(html))
