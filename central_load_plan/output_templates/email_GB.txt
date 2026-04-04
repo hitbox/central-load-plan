@@ -43,7 +43,7 @@ MAX PAYLOAD     MZFW        MTOW        MLDG
 
 --- A/C EQUIPMENT STATUS ---
 ITEM          DESCRIPTION
-{%- for status in aircraft_equipment_status %}
+{%- for status in aircraft_equipment_status_list %}
 {{ '{:14}'.format(status.item) -}}
 {% if status.description %}{{
     '\n'.join(
