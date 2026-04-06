@@ -4,8 +4,9 @@ from datetime import timedelta
 
 from marshmallow import Schema
 from marshmallow import post_load
-from marshmallow.fields import Date
 from marshmallow.fields import AwareDateTime
+from marshmallow.fields import Date
+from marshmallow.fields import Float
 from marshmallow.fields import Integer
 from marshmallow.fields import List
 from marshmallow.fields import Method
@@ -73,8 +74,14 @@ class OperationalFlightPlanSchema(Schema):
     # - change to a mapping for the _for_reporting strings
     units = ['kg', 'lb']
 
+    size = Integer()
+    mtime = Float()
+
     flight_plan_id = String()
-    leg_departure_date_utc = AwareDateTime(format=datetime_format, default_timezone="utc")
+    leg_departure_date_utc = AwareDateTime(
+        format = datetime_format,
+        default_timezone = "utc",
+    )
     flight_origin_date = Date(format=DATE_UTC_FORMAT)
     version_number = String()
     flight_number = Integer() # most lsyrept datasebase tables need integer for crew members
@@ -88,8 +95,14 @@ class OperationalFlightPlanSchema(Schema):
     estimated_block_time = Time(format=DURATION_FMT)
     estimated_time_enroute = Time(format=DURATION_FMT)
 
-    scheduled_departure_time = AwareDateTime(format=datetime_format, default_timezone="utc")
-    estimated_departure_time = AwareDateTime(format=datetime_format, default_timezone="utc")
+    scheduled_departure_time = AwareDateTime(
+        format = datetime_format,
+        default_timezone = "utc",
+    )
+    estimated_departure_time = AwareDateTime(
+        format = datetime_format,
+        default_timezone = "utc",
+    )
 
     planned_payload = Integer()
     planned_payload_unit = String(validate=OneOf(units))
@@ -201,9 +214,7 @@ def raise_for_mixed_units(data, suffix='_unit', ignore_none=True):
     the_only_unit = next(iter(units))
     return the_only_unit
 
-from marshmallow import pre_load
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
-from marshmallow_sqlalchemy import auto_field
 
 from central_load_plan.extension import db
 from central_load_plan.models import AircraftEquipmentStatus
@@ -211,6 +222,7 @@ from central_load_plan.models import CrewMember
 from central_load_plan.models import OFPFile
 
 class AircraftEquipmentStatusSchema(SQLAlchemyAutoSchema):
+
     class Meta:
         model = AircraftEquipmentStatus
         load_instance = True
@@ -218,6 +230,7 @@ class AircraftEquipmentStatusSchema(SQLAlchemyAutoSchema):
 
 
 class CrewMemberSchema(SQLAlchemyAutoSchema):
+
     class Meta:
         model = CrewMember
         load_instance = True
@@ -225,6 +238,7 @@ class CrewMemberSchema(SQLAlchemyAutoSchema):
 
 
 class OperationalFlightPlanSchema(SQLAlchemyAutoSchema):
+
     class Meta:
         model = OFPFile
         load_instance = True
@@ -238,5 +252,3 @@ class OperationalFlightPlanSchema(SQLAlchemyAutoSchema):
     # Add relationships
     aircraft_equipment_status_list = Nested(AircraftEquipmentStatusSchema, many=True)
     crewmembers = Nested(CrewMemberSchema, many=True)
-
-

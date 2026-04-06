@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 
 from datetime import timedelta
@@ -21,6 +22,22 @@ class OFPFile(CLPBase):
     id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
 
     original_path = sa.Column(sa.String, nullable=True)
+
+    size = sa.Column(
+        sa.Integer,
+        nullable = False,
+        comment = 'os.path.getsize value',
+    )
+
+    mtime = sa.Column(
+        sa.Integer,
+        nullable = False,
+        comment = 'os.path.getmtime value',
+    )
+
+    @property
+    def mtime_age(self):
+        return time.time() - self.mtime
 
     archive_path = sa.Column(
         sa.String,

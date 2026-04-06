@@ -4,7 +4,7 @@ from enum import Enum
 
 import sqlalchemy as sa
 
-from .clp_base import CLPBase
+from central_load_plan.models.clp_base import CLPBase
 
 class JobTypeEnum(Enum):
     """
@@ -16,6 +16,8 @@ class JobTypeEnum(Enum):
     FILE_FROM_TEMPLATE = 'file_from_template'
 
     JSON_FILE = 'json_file'
+
+    MOVE_FILE = 'move_file'
 
     def instance(self):
         from central_load_plan.www.extension import db

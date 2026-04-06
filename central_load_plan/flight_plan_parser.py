@@ -1,3 +1,4 @@
+import os
 import argparse
 import xml.etree.ElementTree as ET
 
@@ -223,6 +224,16 @@ class FlightPlanParser(Parser):
         namespaces = flight_plan_namespaces,
         multiple = True,
     )
+
+    def parse_path(self, path):
+        data = super().parse_path(path)
+        data.update({
+            'size': os.path.getsize(path),
+            'mtime': os.path.getmtime(path),
+            'original_path': path,
+        })
+        return data
+
 
 def main(argv=None):
     from central_load_plan.schema import OperationalFlightPlanSchema

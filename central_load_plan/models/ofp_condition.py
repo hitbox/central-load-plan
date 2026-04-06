@@ -111,6 +111,9 @@ class OFPCondition(CLPBase):
             return op(ofp_file_column, values[0])
 
     def is_match(self, ofp_file):
+        """
+        OFPCondition matches data scraped from OFP stored in OFPFile object.
+        """
         ofp_file_mapper = sa.inspect(OFPFile)
 
         op = self.__valid_operators__[self.operator]

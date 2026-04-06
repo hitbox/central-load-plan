@@ -5,6 +5,7 @@ from .objects import objects_bp
 from .job_template import job_template_bp
 from .lsyrept import lsyrept_bp
 from .ofp_file import ofp_file_bp
+from .job import job_bp
 
 def init_app(app):
     app.register_blueprint(crewmember_bp, url_prefix='/crewmembers')
@@ -14,5 +15,6 @@ def init_app(app):
     app.register_blueprint(job_template_bp, url_prefix='/job-template')
 
     # command-line only blueprints
+    app.register_blueprint(job_bp)
     app.register_blueprint(lsyrept_bp)
     app.register_blueprint(ofp_file_bp)

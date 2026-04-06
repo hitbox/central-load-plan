@@ -2,6 +2,10 @@ import glob
 import logging
 import os
 
+from pprint import pprint
+
+import click
+
 from flask import Blueprint
 from flask import current_app
 
@@ -14,29 +18,26 @@ ofp_file_bp = Blueprint('ofp_file', __name__)
 
 
 @ofp_file_bp.cli.command('load-from-archive')
-def load_from_archive():
+@click.option('--config-var')
+def load_from_archive(config_var):
     """
     Load OFPFile objects from configured glob pattern.
     """
     logger = logging.getLogger(f'{__name__}.load_from_archive')
 
-    glob_pattern = current_app.config.get('ARCHIVE_GLOB_PATTERN')
-
+    glob_pattern = current_app.config.get(config_var)
+    
     if glob_pattern is None:
-        raise ValueError(f'No glob pattern configured in ARCHIVE_GLOB_PATTERN')
+        raise ValueError(f'No glob pattern configured in {config_var}')
 
     existing = db.session.scalars(db.select(OFPFile.archive_path)).all()
 
-    paths = glob.iglob(
-        '/home/hitbox/repos/atsg/lido-middleware/instance/archive'
-        '/atsgioccmw01/transfers$/Lufthansa/CLP/EFF/Archive_EFF'
-        '/**/*.xml',
-        recursive = True,
-    )
+    paths = glob.iglob(glob_pattern, recursive=True)
     flight_plan_parser = FlightPlanParser()
     for count, path in enumerate(paths, start=1):
         if path not in existing and os.path.isfile(path):
             ofp_strings = flight_plan_parser.parse_path(path)
+            ofp_strings['archive_path'] = path
 
             ofp_schema = OperationalFlightPlanSchema()
 
