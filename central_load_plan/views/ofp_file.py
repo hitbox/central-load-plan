@@ -26,21 +26,33 @@ def load_from_archive(config_var):
     logger = logging.getLogger(f'{__name__}.load_from_archive')
 
     glob_pattern = current_app.config.get(config_var)
-    
-    if glob_pattern is None:
-        raise ValueError(f'No glob pattern configured in {config_var}')
 
-    existing = db.session.scalars(db.select(OFPFile.archive_path)).all()
+    if glob_pattern is None:
+        raise ValueError(f'No config var {config_var}')
+
+    logger.info(f'Searching {glob_pattern=}')
+
+    existing = set(db.session.scalars(db.select(OFPFile.archive_path)).all())
 
     paths = glob.iglob(glob_pattern, recursive=True)
     flight_plan_parser = FlightPlanParser()
-    for count, path in enumerate(paths, start=1):
+    for path in paths:
+        # Size check because we're not using the conditions on Job objects.
         if path not in existing and os.path.isfile(path):
+            # Normalize path
+            path = os.path.normpath(path)
+            if os.path.getsize(path) < 1:
+                logger.info('Skip empty file %s', path)
+                continue
+
+            # Parse XML for strings
             ofp_strings = flight_plan_parser.parse_path(path)
             ofp_strings['archive_path'] = path
 
+            # Convert strings to Python types.
             ofp_schema = OperationalFlightPlanSchema()
 
+            # Create database object.
             ofp_file = ofp_schema.load(ofp_strings, session=db.session)
             # No original path because this is the archive
             ofp_file.archive_path = path

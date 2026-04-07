@@ -1,5 +1,6 @@
 import smtplib
 import uuid
+import logging
 
 from email.message import EmailMessage
 
@@ -11,6 +12,8 @@ from central_load_plan import rendering
 
 from .job_type import JobTypeEnum
 from .polybase import Job
+
+logger = logging.getLogger(__name__)
 
 class EmailFromTemplateJob(Job):
 
@@ -45,6 +48,10 @@ class EmailFromTemplateJob(Job):
     )
 
     def do_work(self):
+        # Wanted this to be like other extenions but that module imports the
+        # base model.
+        from central_load_plan.extension import smtp
+
         config = current_app.config
 
         smtp_host = config.get('SMTP_HOST')
@@ -66,7 +73,6 @@ class EmailFromTemplateJob(Job):
 
         # Render subject + body
         subject = self.subject.format(**ofp_data)
-        body = rendering.render(self.template_name, ofp_data)
 
         # Build message
         msg = EmailMessage()
@@ -74,9 +80,10 @@ class EmailFromTemplateJob(Job):
         msg['From'] = from_addr
         msg['To'] = ', '.join(to_addresses)
 
-        # You could switch to add_alternative for HTML later
+        body = rendering.render(self.template_name, ofp_data)
         msg.set_content(body)
 
         # Send
-        with smtplib.SMTP(smtp_host, smtp_port) as smtp:
-            smtp.send_message(msg)
+        smtp.send_email(subject, to_addresses, body, sender=from_addr)
+        #with smtplib.SMTP(smtp_host, smtp_port) as smtp:
+        #    smtp.send_message(msg)
