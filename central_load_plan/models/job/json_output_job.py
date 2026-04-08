@@ -1,12 +1,15 @@
 import os
 import uuid
 import json
+import logging
 
 import sqlalchemy as sa
 
 
 from .job_type import JobTypeEnum
 from .polybase import Job
+
+logger = logging.getLogger(__name__)
 
 class JSONOutputJob(Job):
 
@@ -45,3 +48,5 @@ class JSONOutputJob(Job):
 
         with open(destination, 'w') as outfile:
             json.dump(dumped, outfile)
+
+        logger.info('json dumped: %s', destination)

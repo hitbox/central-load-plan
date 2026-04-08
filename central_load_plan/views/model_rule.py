@@ -22,8 +22,9 @@ def add_url_rule_for_editing(
     blueprint,
     rule,
     model,
-    form_class,
     template,
+    form_class = None,
+    form_class_factory = None,
     view_name = 'edit',
     extra_kwargs = None,
 ):
@@ -36,6 +37,7 @@ def add_url_rule_for_editing(
             model = model,
             template = template,
             form_class = form_class,
+            form_class_factory = form_class_factory,
             **extra_kwargs,
         )
     )

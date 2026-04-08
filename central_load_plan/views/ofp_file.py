@@ -16,7 +16,6 @@ from central_load_plan.schema import OperationalFlightPlanSchema
 
 ofp_file_bp = Blueprint('ofp_file', __name__)
 
-
 @ofp_file_bp.cli.command('load-from-archive')
 @click.option('--config-var')
 def load_from_archive(config_var):

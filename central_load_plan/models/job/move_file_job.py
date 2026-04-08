@@ -1,11 +1,14 @@
 import os
 import shutil
 import uuid
+import logging
 
 import sqlalchemy as sa
 
 from .job_type import JobTypeEnum
 from .polybase import Job
+
+logger = logging.getLogger(__name__)
 
 class MoveFileJob(Job):
     """
@@ -34,13 +37,22 @@ class MoveFileJob(Job):
     )
 
     def do_work(self):
+        if self.ofp_file.original_path is None and self.ofp_file.archive_path is not None:
+            logger.warning(
+                'skipping move, file appears to be loaded'
+                ' from archive %s', self.ofp_file.archive_path)
+            return
+
         ofp_data = self.ofp_file.as_dict_with_crew()
 
         destination = self.destination_path.format(**ofp_data)
+        if os.path.exists(destination):
+            logger.warning('skipping, destination already exists %s', destination)
+            return
 
         dirpath = os.path.dirname(destination)
         os.makedirs(dirpath, exist_ok=True)
 
         shutil.move(self.ofp_file.original_path, destination)
 
-        ofp_file.archive_path = destination
+        self.ofp_file.archive_path = destination

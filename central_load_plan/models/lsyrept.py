@@ -17,7 +17,12 @@ class LSYBase(DeclarativeBase):
 class FilterMixin:
 
     @classmethod
-    def filter_for_ofp_file(cls, ofp_file):
+    def flight_criteria_from_ofp_file(cls, ofp_file):
+        """
+        Convenience method for creating flight criteria for several different
+        classes. 
+        """
+        # These criteria are applied to Duty and ItemDaily
         flight_no_value = str(ofp_file.flight_number)
         # Some flight_no fields are integer and some are string, oracle seems
         # to figure it out.
@@ -213,7 +218,7 @@ class LSYCrewMember(TrimmedNameMixin, LSYBase):
                 cls.tlc == Duty.tlc,
             )
             .where(
-                ItemDaily.filter_for_ofp_file(ofp_file)
+                ItemDaily.flight_criteria_from_ofp_file(ofp_file)
             )
             .order_by('seat_order')
         )
@@ -326,7 +331,7 @@ class Duty(FilterMixin, LSYBase):
             )
             .join(cls, cls.tlc == LSYCrewMember.tlc)
             .where(
-                cls.filter_for_ofp_file(ofp_file),
+                cls.flight_criteria_from_ofp_file(ofp_file),
                 cls.is_deadhead,
             )
         )
@@ -597,7 +602,7 @@ class RemarkOfEvent(LSYBase):
             sa.select(cls)
             .join(ItemDaily, cls.uno == ItemDaily.uno)
             .where(
-                ItemDaily.filter_for_ofp_file(ofp_file),
+                ItemDaily.flight_criteria_from_ofp_file(ofp_file),
                 cls.is_jumpseat,
             )
         )

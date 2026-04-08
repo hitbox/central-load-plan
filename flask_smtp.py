@@ -34,8 +34,12 @@ class SMTP:
             server_class = smtplib.SMTP_SSL
         else:
             server_class = smtplib.SMTP
+        server = server_class(
+            self.app.config['SMTP_SERVER'],
+            self.app.config['SMTP_PORT'],
+            timeout = 10,
+        )
         try:
-            server = server_class(self.app.config['SMTP_SERVER'], self.app.config['SMTP_PORT'], timeout=10)
             if self.app.config['SMTP_USE_TLS'] and not self.app.config['SMTP_USE_SSL']:
                 server.starttls()
             username = self.app.config['SMTP_USERNAME']

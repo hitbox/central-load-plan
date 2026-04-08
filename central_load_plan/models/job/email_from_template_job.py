@@ -2,6 +2,7 @@ import smtplib
 import uuid
 import logging
 
+from datetime import datetime
 from email.message import EmailMessage
 
 import sqlalchemy as sa
@@ -66,15 +67,17 @@ class EmailFromTemplateJob(Job):
         # Resolve addresses
         from_addr = self.from_email.address.format(**ofp_data)
 
+        # The proper matching send-to addresses are created by
+        # the EmailFromTemplateJobTemplate.send_tos_for_conditions method.
         to_addresses = [
             send_to.email.address.format(**ofp_data)
             for send_to in self.send_tos
         ]
 
-        # Render subject + body
+        # Render subject
         subject = self.subject.format(**ofp_data)
 
-        # Build message
+        # Create email message.
         msg = EmailMessage()
         msg['Subject'] = subject
         msg['From'] = from_addr
@@ -85,5 +88,4 @@ class EmailFromTemplateJob(Job):
 
         # Send
         smtp.send_email(subject, to_addresses, body, sender=from_addr)
-        #with smtplib.SMTP(smtp_host, smtp_port) as smtp:
-        #    smtp.send_message(msg)
+        logger.info('sent email subject=%r, to=%r', subject, to_addresses)

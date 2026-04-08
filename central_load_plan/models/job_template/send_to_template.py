@@ -14,6 +14,7 @@ class SendToTemplate(CLPBase):
 
     id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
 
+    # Parent EmailFromTemplateJobTemplate
     email_from_template_job_template_id = sa.Column(
         sa.Uuid,
         sa.ForeignKey('email_from_template_job_template.id'),
@@ -23,6 +24,16 @@ class SendToTemplate(CLPBase):
         'EmailFromTemplateJobTemplate',
     )
 
+    # OFP Condition to add related email to final send to list.
+    ofp_condition_id = sa.Column(
+        sa.ForeignKey('ofp_condition.id'),
+    )
+
+    ofp_condition = sa.orm.relationship(
+        'OFPCondition',
+    )
+
+    # Email to append to list if OFPCondition is met.
     email_id = sa.Column(sa.Uuid, sa.ForeignKey('email.id'))
 
     email = sa.orm.relationship(

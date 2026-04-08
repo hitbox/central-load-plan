@@ -13,6 +13,7 @@ from flask import current_app
 from central_load_plan.extension import db
 from central_load_plan.flight_plan_parser import FlightPlanParser
 from central_load_plan.models import JobTemplate
+from central_load_plan.models import OFPFile
 from central_load_plan.schema import OperationalFlightPlanSchema
 
 job_bp = Blueprint('job', __name__)
@@ -41,8 +42,6 @@ def process(glob_pattern, config_var, recursive):
 
             ofp_strings = flight_plan_parser.parse_path(path)
             ofp_strings.update({
-                'size': os.path.getsize(path),
-                'mtime': os.path.getmtime(path),
                 'original_path': path,
             })
 
@@ -52,9 +51,39 @@ def process(glob_pattern, config_var, recursive):
                 db.session,
                 ofp_file,
             )
-            jobs = []
+
             for job_template in job_templates:
                 job = job_template.make_job(ofp_file)
                 db.session.add(job)
+                try:
+                    job.do_work()
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+                    logger.exception(f'An exception occcurred during {job_template.name} work.')
+
+@job_bp.cli.command('process-existing')
+def process_existing():
+    """
+    """
+    logger = logging.getLogger(f'{__name__}.process_existing')
+
+    ofp_files = db.session.scalars(db.select(OFPFile))
+
+    for ofp_file in ofp_files:
+        job_templates = JobTemplate.all_matches_sorted_for_execution(
+            db.session,
+            ofp_file,
+        )
+
+        for job_template in job_templates:
+            job = job_template.make_job(ofp_file)
+            db.session.add(job)
+            try:
                 job.do_work()
-            db.session.commit()
+                db.session.commit()
+            except KeyboardInterrupt:
+                break
+            except:
+                db.session.rollback()
+                logger.exception(f'An exception occcurred during {job_template.name} work.')

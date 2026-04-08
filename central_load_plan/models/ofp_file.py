@@ -134,13 +134,17 @@ class OFPFile(CLPBase):
     crewmembers = sa.orm.relationship(
         'CrewMember',
         back_populates = 'ofp_files',
-        order_by = lambda: CrewMember.seat_order,
+        order_by = 'CrewMember.seat_order',
     )
 
     jobs = sa.orm.relationship(
         'Job',
         back_populates = 'ofp_file',
     )
+
+    @property
+    def flight_origin_date_mdy(self):
+        return self.flight_origin_date.strftime('%d%b%y')
 
     @property
     def estimated_arrival_time(self):
@@ -241,47 +245,3 @@ class OFPFile(CLPBase):
     def has_crew(self):
         ofp_data = self.as_dict_with_crew()
         return bool(ofp_data['crewmembers'])
-
-
-class AircraftEquipmentStatus(CLPBase):
-
-    __tablename__ = 'aircraft_equipment_status'
-
-    id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
-
-    item = sa.Column(sa.String)
-
-    description = sa.Column(sa.String)
-
-    ofp_file_id = sa.Column(sa.ForeignKey('ofp_file.id'))
-
-    ofp_files = sa.orm.relationship(
-        'OFPFile',
-        back_populates = 'aircraft_equipment_status_list',
-    )
-
-
-class CrewMember(CLPBase):
-
-    __tablename__ = 'crew_member'
-
-    id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
-
-    ofp_file_id = sa.Column(sa.ForeignKey('ofp_file.id'))
-
-    ofp_files = sa.orm.relationship(
-        'OFPFile',
-        back_populates = 'crewmembers',
-    )
-
-    first_name = sa.Column(sa.String)
-
-    last_name = sa.Column(sa.String)
-
-    employee_number = sa.Column(sa.String)
-
-    seat = sa.Column(sa.String)
-
-    source = sa.Column(sa.String)
-
-    seat_order = sa.Column(sa.Integer)

@@ -230,7 +230,6 @@ class FlightPlanParser(Parser):
         data.update({
             'size': os.path.getsize(path),
             'mtime': os.path.getmtime(path),
-            'original_path': path,
         })
         return data
 

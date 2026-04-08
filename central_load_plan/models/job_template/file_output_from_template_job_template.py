@@ -1,3 +1,4 @@
+import os
 import uuid
 
 import sqlalchemy as sa
@@ -50,12 +51,11 @@ class FileOutputFromTemplateJobTemplate(JobTemplate):
 
         html = ['<div>']
         html.append('<p>Output Path</p>')
-        output_path = self.output_path.format(**ofp_data)
-        html.append(f'<p>{ output_path }</p>')
+        html.append(f'<pre class="value">{os.path.normpath(ofp_file.display_path)}</pre>')
 
         content = rendering.render(self.template_name, ofp_data)
         html.append('<p>Content</p>')
-        html.append(f'<pre>{ content }</pre>')
+        html.append(f'<pre class="value">{ content }</pre>')
 
         html.append('</div>')
         return Markup(''.join(html))

@@ -48,7 +48,7 @@ class JSONOutputJobTemplate(JobTemplate):
         content = schema.dump(ofp_data)
 
         html.append('<p>Content</p>')
-        html.append(f'<pre style="white-space: pre-wrap;">{ content }</pre>')
+        html.append(f'<pre class="value">{ content }</pre>')
 
         html.append('</div>')
         return Markup(''.join(html))

@@ -10,8 +10,12 @@ from markupsafe import Markup
 from central_load_plan.extension import db
 from central_load_plan.extension import login_manager
 from central_load_plan.form import EmailForm
+from central_load_plan.form import EmailFromTemplateJobTemplateForm
+from central_load_plan.form import FileFromTemplateJobTemplateForm
+from central_load_plan.form import JSONOutputJobTemplateForm
 from central_load_plan.form import JobTemplateForm
 from central_load_plan.form import JobTypeForm
+from central_load_plan.form import MoveFileJobTemplateForm
 from central_load_plan.form import OFPConditionForm
 from central_load_plan.form import OFPFileFilterForm
 from central_load_plan.form import OFPFileSortForm
@@ -24,6 +28,7 @@ from central_load_plan.models import Email
 from central_load_plan.models import Job
 from central_load_plan.models import JobTemplate
 from central_load_plan.models import JobType
+from central_load_plan.models import JobTypeEnum
 from central_load_plan.models import OFPCondition
 from central_load_plan.models import OFPFile
 from central_load_plan.models import User
@@ -51,7 +56,8 @@ user_admin_blueprint = Blueprint('users', __name__)
 add_url_rule_for_table_listing(
     user_admin_blueprint,
     rule = '/users',
-    pagination_factory = lambda: db.paginate(db.select(User)),
+    query_form_manager = QueryFormManager(model=User),
+    #pagination_factory = lambda: db.paginate(db.select(User)),
     template = 'table.html',
     table = Table(
         model = User,
@@ -87,7 +93,10 @@ email_admin_blueprint = Blueprint('emails', __name__)
 add_url_rule_for_table_listing(
     email_admin_blueprint,
     rule = '/emails',
-    pagination_factory = lambda: db.paginate(db.select(Email)),
+    query_form_manager = QueryFormManager(
+        model = Email,
+    ),
+    edit_endpoint = '.edit',
     template = 'table.html',
     table = Table(
         model = Email,
@@ -132,7 +141,8 @@ ofp_condition_admin_blueprint = Blueprint('ofp_condition', __name__)
 add_url_rule_for_table_listing(
     ofp_condition_admin_blueprint,
     rule = '/ofp-condition',
-    pagination_factory = lambda: db.paginate(db.select(OFPCondition)),
+    #pagination_factory = lambda: db.paginate(db.select(OFPCondition)),
+    query_form_manager = QueryFormManager(model=OFPCondition),
     template = 'table.html',
     table = Table(
         model = Email,
@@ -155,10 +165,20 @@ add_url_rule_for_creating(
 # JobTemplate database objects administration
 job_template_admin_blueprint = Blueprint('job_template', __name__)
 
+def job_template_form_for_instance(job_template):
+    if job_template.job_type_name == JobTypeEnum.EMAIL_FROM_TEMPLATE.name:
+        return EmailFromTemplateJobTemplateForm
+    elif job_template.job_type_name == JobTypeEnum.FILE_FROM_TEMPLATE.name:
+        return FileFromTemplateJobTemplateForm
+    elif job_template.job_type_name == JobTypeEnum.JSON_FILE.name:
+        return JSONOutputJobTemplateForm
+    elif job_template.job_type_name == JobTypeEnum.MOVE_FILE.name:
+        return MoveFileJobTemplateForm
+
 add_url_rule_for_table_listing(
     job_template_admin_blueprint,
     rule = '/job-template',
-    pagination_factory = lambda: db.paginate(db.select(JobTemplate)),
+    query_form_manager = QueryFormManager(model=JobTemplate),
     template = 'table.html',
     edit_endpoint = '.edit',
     table = Table(
@@ -175,14 +195,14 @@ add_url_rule_for_creating(
     job_template_admin_blueprint,
     rule = '/job-template/new',
     model = JobTemplate,
-    form_class = JobTemplateForm,
+    form_class = EmailFromTemplateJobTemplateForm,
     template = 'form.html',
 )
 
 add_url_rule_for_editing(
     job_template_admin_blueprint,
     rule = '/job-template/<uuid:id>',
-    form_class = JobTemplateForm,
+    form_class_factory = job_template_form_for_instance,
     model = JobTemplate,
     template = 'form.html',
 )
@@ -192,7 +212,8 @@ job_admin_blueprint = Blueprint('job', __name__)
 add_url_rule_for_table_listing(
     job_admin_blueprint,
     rule = '/job',
-    pagination_factory = lambda: db.paginate(db.select(Job)),
+    #pagination_factory = lambda: db.paginate(db.select(Job)),
+    query_form_manager = QueryFormManager(model=Job),
     template = 'table.html',
     table = Table(
         model = Job,
@@ -304,7 +325,8 @@ add_url_rule_for_table_listing(
     job_type_blueprint,
     rule = '/job-types',
     template = 'table.html',
-    pagination_factory = lambda: db.paginate(db.select(JobType)),
+    #pagination_factory = lambda: db.paginate(db.select(JobType)),
+    query_form_manager = QueryFormManager(model=JobType),
     table = Table(
         model = JobType,
         columns = [

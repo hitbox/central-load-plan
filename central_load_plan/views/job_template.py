@@ -76,15 +76,3 @@ def preview_job_template_for_file(job_template_id, ofp_file_id):
         'markup': job_template.html_preview(ofp_file),
     }
     return render_template('basic.html', **context)
-
-@job_template_bp.cli.command('list-for-crew')
-def list_for_crew():
-    """
-    Trying to find an OFPFile with crew coming back from the LSY queries
-    """
-
-    for ofp_file in db.session.scalars(db.select(OFPFile)):
-        click.echo(ofp_file.archive_path)
-        ofp_data = ofp_file.as_dict_with_crew()
-        if ofp_data['crew_members']:
-            breakpoint()

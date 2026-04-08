@@ -16,10 +16,27 @@ class EditObjectView(View):
     """
     methods = ['GET', 'POST']
 
-    def __init__(self, form_class, model, template, extra_context=None):
-        self.form_class = form_class
+    def __init__(
+        self,
+        model,
+        template,
+        form_class_factory = None,
+        form_class = None,
+        extra_context = None,
+    ):
+        if not (form_class_factory or form_class):
+            raise ValueError(
+                'Either form_class_factory or form_class keyword'
+                'argument is required.')
+        if (form_class_factory and form_class):
+            raise ValueError(
+                'Exactly one of form_class_factory or'
+                ' form_class keyword arguments is required.')
+
         self.model = model
         self.template = template
+        self.form_class_factory = form_class_factory
+        self.form_class = form_class
         self.extra_context = extra_context
 
     def dispatch_request(self, **ident):
@@ -28,10 +45,15 @@ class EditObjectView(View):
         if instance is None:
             abort(404)
 
-        if request.form:
-            form = self.form_class(data=request.form)
+        if self.form_class_factory is not None:
+            form_class = self.form_class_factory(instance)
         else:
-            form = self.form_class(obj=instance)
+            form_class = self.form_class
+
+        if request.form:
+            form = form_class(data=request.form)
+        else:
+            form = form_class(obj=instance)
 
         if request.method == 'POST' and form.validate():
             if 'delete' in request.form:

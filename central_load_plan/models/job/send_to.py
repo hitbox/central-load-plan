@@ -5,6 +5,9 @@ import sqlalchemy as sa
 from central_load_plan.models.clp_base import CLPBase
 
 class SendTo(CLPBase):
+    """
+    Association object linking EmailFromTemplateJob to Email objects.
+    """
 
     __tablename__ = 'send_to'
 

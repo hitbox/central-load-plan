@@ -58,11 +58,23 @@ class EmailFromTemplateJobTemplate(JobTemplate):
         comment = 'Format string given scraped OFP data for email subject',
     )
 
+    def send_tos_for_conditions(self, ofp_file):
+        send_tos = []
+        for send_to_template in self.send_tos:
+            # Has OFPCondition and it matches or no condition.
+            if (
+                send_to_template.ofp_condition is None
+                or
+                send_to_template.ofp_condition.is_match(ofp_file)
+            ):
+                send_tos.append(send_to_template.make_job())
+        return send_tos
+
     def make_job(self, ofp_file):
         return self.__job_class__(
             ofp_file = ofp_file,
             name = self.name,
-            send_tos = [send_to.make_job() for send_to in self.send_tos],
+            send_tos = self.send_tos_for_conditions(ofp_file),
             from_email = self.from_email,
             template_name = self.template_name,
             subject = self.subject,
@@ -86,7 +98,7 @@ class EmailFromTemplateJobTemplate(JobTemplate):
         html.append(f'<pre class="value">{ self.from_email.address.format(**ofp_data) }</pre>')
 
         html.append('<p>To:</p>')
-        for send_to in self.send_tos:
+        for send_to in self.send_tos_for_conditions(ofp_file):
             address = send_to.email.address.format(**ofp_data)
             html.append(f'<pre class="value">{ address }</pre>')
 
@@ -98,7 +110,7 @@ class EmailFromTemplateJobTemplate(JobTemplate):
         html.append('<p>Email Body:</p>')
         html.append(f'<pre class="value">{ body }</pre>')
 
-        html.append('<p>File Contents:</p>')
+        html.append('<p>OFP XML File Contents:</p>')
         with open(ofp_file.archive_path, 'r') as f:
             file_contents = escape(f.read())
             html.append(f'<pre class="xml value">{file_contents}</pre>')

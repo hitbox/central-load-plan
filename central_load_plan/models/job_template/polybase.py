@@ -37,6 +37,7 @@ class JobTemplate(CLPBase):
 
     min_size = sa.Column(
         sa.Integer,
+        comment = 'minimum file size to process this job',
     )
 
     min_age = sa.Column(
@@ -57,7 +58,7 @@ class JobTemplate(CLPBase):
         super().__init__(**kwargs)
 
     @classmethod
-    def matches(cls, session, ofp_file):
+    def _matches_for_ofp_file(cls, session, ofp_file):
         for job_template in session.scalars(sa.select(cls)):
             if (
                 job_template.ofp_condition.is_match(ofp_file)
@@ -69,4 +70,4 @@ class JobTemplate(CLPBase):
     @classmethod
     def all_matches_sorted_for_execution(cls, session, ofp_file):
         key = attrgetter('execution_position')
-        return sorted(cls.matches(session, ofp_file), key=key)
+        return sorted(cls._matches_for_ofp_file(session, ofp_file), key=key)

@@ -1,6 +1,10 @@
+import os
 import uuid
 
 import sqlalchemy as sa
+
+from markupsafe import escape
+from markupsafe import Markup
 
 from ..job import JobTypeEnum
 from ..job import MoveFileJob
@@ -40,3 +44,26 @@ class MoveFileJobTemplate(JobTemplate):
             name = self.name,
             destination_path = self.destination_path,
         )
+
+    def html_preview(self, ofp_file):
+        """
+        HTML Markup for preview of the email this job template would produce.
+        """
+        ofp_data = ofp_file.as_dict_with_crew()
+
+        html = ['<div>']
+
+        html.append('<p>Name</p>')
+        html.append(f'<pre>{self.name}</pre>')
+
+        html.append('<p>Move</p>')
+        html.append(f'<pre class="value">{os.path.normpath(ofp_file.display_path)}</pre>')
+
+        html.append('<p>To</p>')
+        destination_path = self.destination_path.format(**ofp_data)
+        destination_path = os.path.normpath(destination_path)
+
+        html.append(f'<pre class="value">{ escape(destination_path) }</pre>')
+
+        html.append('</div>')
+        return Markup(''.join(html))

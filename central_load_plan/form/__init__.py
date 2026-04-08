@@ -28,10 +28,14 @@ from central_load_plan.models import OFPConditionValue
 from central_load_plan.models import OFPFile
 from central_load_plan.singlepage import DynamicListWidget
 from central_load_plan.widget import NestedFormWidget
-
 from central_load_plan.field import JSONField
 
+from .email import EmailForm
+from .job_template import EmailFromTemplateJobTemplateForm
+from .job_template import FileFromTemplateJobTemplateForm
+from .job_template import JSONOutputJobTemplateForm
 from .job_template import JobTemplateForm
+from .job_template import MoveFileJobTemplateForm
 from .ofp_file import OFPFileFilterForm
 from .ofp_file import OFPFileSortForm
 
@@ -93,16 +97,6 @@ class UserForm(Form):
     username = StringField()
 
     password = PasswordField()
-
-    update = SubmitField()
-    delete = SubmitField()
-
-
-class EmailForm(Form):
-
-    address = StringField()
-
-    display_name = StringField()
 
     update = SubmitField()
     delete = SubmitField()

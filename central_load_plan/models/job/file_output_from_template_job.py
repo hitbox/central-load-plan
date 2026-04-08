@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 
@@ -7,6 +8,8 @@ from .polybase import Job
 from .job_type import JobTypeEnum
 
 from central_load_plan import rendering
+
+logger = logging.getLogger(__name__)
 
 class FileOutputFromTemplateJob(Job):
 
@@ -41,3 +44,5 @@ class FileOutputFromTemplateJob(Job):
 
         with open(destination, 'w') as outfile:
             outfile.write(content)
+
+        logger.info('wrote %s', destination)
