@@ -59,6 +59,14 @@ class JobTemplate(CLPBase):
 
     @classmethod
     def _matches_for_ofp_file(cls, session, ofp_file):
+        """
+        Yield all JobTemplate objects whose related OFPCondition conditions
+        match against OFPFile ofp_file.
+
+        This is a positive style condition. All conditions must match. Unlike
+        the related OFPCondition condition objects for SendToTemplate for which
+        an empty condition (None) is taken as a match.
+        """
         for job_template in session.scalars(sa.select(cls)):
             if (
                 job_template.ofp_condition.is_match(ofp_file)

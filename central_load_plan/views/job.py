@@ -58,9 +58,14 @@ def process(glob_pattern, config_var, recursive):
                 try:
                     job.do_work()
                     db.session.commit()
+                except KeyboardInterrupt:
+                    break
                 except:
                     db.session.rollback()
-                    logger.exception(f'An exception occcurred during {job_template.name} work.')
+                    logger.exception(
+                        f'An exception occcurred during %s work.',
+                        job_template.name,
+                    )
 
 @job_bp.cli.command('process-existing')
 def process_existing():
