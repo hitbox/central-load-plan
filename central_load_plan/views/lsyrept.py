@@ -1,3 +1,7 @@
+import csv
+import json
+
+import sqlalchemy as sa
 import click
 
 from flask import Blueprint
@@ -19,6 +23,7 @@ from central_load_plan.extension import db
 from central_load_plan.models import ChainItemDaily
 from central_load_plan.models import Duty
 from central_load_plan.models import ItemDaily
+from central_load_plan.models import LSYBase
 from central_load_plan.models import LSYCrewMember
 from central_load_plan.models import OFPFile
 from central_load_plan.models import RemarkOfEvent
@@ -62,3 +67,71 @@ def query_crewmembers(ofp_file_uuid, echo):
             raise NoResultFound(f'No results for query.')
         crewmembers.extend(more_crew)
         click.echo(f'{len(more_crew)}')
+
+@lsyrept_bp.cli.command('dump')
+def dump():
+    """
+    Dump the LSY databases for development.
+    """
+
+    manifest = {
+    }
+
+    for airline in current_app.config['CREDENTIALS_FOR_AIRLINE'].keys():
+        tables = {}
+        manifest[airline] = {
+            'tables': tables,
+        }
+        engine = get_lsyrept_engine(airline)
+
+        with Session(engine) as session:
+            for table in LSYBase.metadata.tables.values():
+                query = sa.select(table)
+                data_rows = session.scalars(query).all()
+                output_fn = f'{airline}_{table.name}.csv'
+                tables[table.name] = output_fn
+                with open(output_fn, 'w', encoding='utf8') as outfile:
+                    csv_writer = csv.DictWriter(outfile, fieldnames=[c.name for c in table.c])
+                    csv_writer.writeheader()
+                    csv_writer.writerows(data_rows)
+
+    with open('manifest.json', 'w', encoding='utf8') as jsonfile:
+        json.dump(manifest, jsonfile)
+
+@lsyrept_bp.cli.command('dump')
+def dump():
+    """
+    Dump the LSY databases for development.
+    """
+
+    manifest = {}
+
+    for airline in current_app.config['CREDENTIALS_FOR_AIRLINE'].keys():
+        tables = {}
+        manifest[airline] = {
+            'tables': tables,
+        }
+
+        for mapper in LSYBase.registry.mappers:
+            cls = mapper.class_
+            print(cls.__name__)
+            table = mapper.local_table
+            query = sa.select(table)
+            engine = get_lsyrept_engine(airline)
+            with Session(engine) as session:
+                result = session.execute(query.execution_options(stream_results=True))
+                data_rows = result.mappings().all()
+
+                output_fn = f'{airline}_{table.name}.csv'
+                tables[cls.__name__] = output_fn
+
+                with open(output_fn, 'w', encoding='utf8', newline='') as outfile:
+                    fieldnames = [c.name for c in table.columns]
+                    writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+
+                    writer.writeheader()
+                    writer.writerows(data_rows)
+
+    # write manifest once
+    with open('manifest.json', 'w', encoding='utf8') as jsonfile:
+        json.dump(manifest, jsonfile, indent=2)

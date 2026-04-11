@@ -249,8 +249,8 @@ ofp_files_query_form_manager = QueryFormManager(
     sort_form_class = OFPFileSortForm,
 )
 
-def mdy_format(ofp_file):
-    return ofp_file.flight_origin_date.strftime('%d%b%y')
+def mdy_format(flight_origin_date):
+    return flight_origin_date.strftime('%d%b%y')
 
 add_url_rule_for_table_listing(
     ofp_file_admin_blueprint,

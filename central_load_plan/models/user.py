@@ -19,8 +19,18 @@ class User(CLPBase, UserMixin):
     username = sa.Column(sa.String, unique=True, nullable=False)
     _password_hash = sa.Column(sa.String, nullable=False)
 
-    is_active = sa.Column(sa.Boolean, nullable=False, default=True)
-    is_admin = sa.Column(sa.Boolean, nullable=False, default=False)
+    is_active = sa.Column(
+        sa.Boolean,
+        nullable=False,
+        default=True,
+        comment = 'User can login.',
+    )
+    is_admin = sa.Column(
+        sa.Boolean,
+        nullable=False,
+        default=False,
+        comment = 'User can access admin pages.',
+    )
 
     @property
     def password(self):
@@ -31,4 +41,4 @@ class User(CLPBase, UserMixin):
         self._password_hash = argon2.hash(plaintext)
 
     def verify_password(self, plaintext):
-        return argon2.verify(plaintext, self._password_hash)
+        return self.is_active and argon2.verify(plaintext, self._password_hash)

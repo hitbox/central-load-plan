@@ -218,6 +218,7 @@ class OFPFile(CLPBase):
         from central_load_plan.schema import OperationalFlightPlanSchema
 
         if os.path.isfile(path) and os.path.getsize(path) > 0:
+            # Is non-empty file.
             # Parse
             flight_plan_parser = FlightPlanParser()
             ofp_strings = flight_plan_parser.parse_path(path)
@@ -226,6 +227,14 @@ class OFPFile(CLPBase):
             ofp_schema = OperationalFlightPlanSchema()
             ofp_file = ofp_schema.load(ofp_strings, transient=True)
             ofp_file.archive_path = path
+
+            for key in self.__dict_keys__:
+                if key != 'id':
+                    try:
+                        setattr(self, key, getattr(ofp_file, key))
+                    except AttributeError:
+                        # ignore properties without setters
+                        pass
 
     def as_dict(self):
         return {k: getattr(self, k) for k in self.__dict_keys__}

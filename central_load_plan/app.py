@@ -7,6 +7,7 @@ from . import converter
 from . import extension
 from . import views
 from . import template_filter
+from .middleware import PrefixMiddleware
 
 CONFIG_PREFIX = 'CENTRAL_LOAD_PLAN'
 
@@ -35,5 +36,10 @@ def create_app():
         Create database schema from SQLAlchemy ORM.
         """
         extension.db.create_all()
+
+    if 'PREFIX_URL' in app.config:
+        # Prefix all urls for configuration
+        prefix_url = app.config['PREFIX_URL']
+        app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=prefix_url)
 
     return app

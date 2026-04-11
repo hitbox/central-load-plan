@@ -72,6 +72,8 @@ def preview_job_template_for_file(job_template_id, ofp_file_id):
     if ofp_file is None:
         abort(404)
 
+    ofp_file.update_from_path(db.session, ofp_file.archive_path)
+
     context = {
         'markup': job_template.html_preview(ofp_file),
     }

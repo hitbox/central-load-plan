@@ -14,10 +14,9 @@ class TableColumn:
         self.cast = cast
 
     def valueof(self, instance):
+        value = deep_getattr(instance, self.attr)
         if self.cast:
-            value = self.cast(instance)
-        else:
-            value = deep_getattr(instance, self.attr)
+            value = self.cast(value)
         return value
 
 

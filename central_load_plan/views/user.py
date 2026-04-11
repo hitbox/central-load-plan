@@ -12,6 +12,9 @@ from flask_login import login_required
 from markupsafe import Markup
 from sqlalchemy.orm import Session
 
+from urllib.parse import urljoin
+from urllib.parse import urlparse
+
 import sqlalchemy as sa
 import click
 
@@ -24,12 +27,18 @@ from central_load_plan.models import User
 
 user_bp = Blueprint('user', __name__)
 
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ("http", "https") and ref_url.netloc == test_url.netloc
+
 @user_bp.route('/', methods=['GET', 'POST'])
 def login():
     login_form = LoginForm(request.form)
 
     if request.method == 'POST':
         if login_form.validate():
+
             user_query = db.select(User).where(User.username == login_form.username.data)
             try:
                 user = db.session.scalars(user_query).one()
@@ -39,10 +48,13 @@ def login():
                 if user.verify_password(login_form.password.data):
                     login_user(user)
                     flash(f'{user.username} logged in', 'success')
-                    return redirect(url_for('crewmember.index'))
+
+                    next_url = request.args.get('next')
+                    if not next_url or not is_safe_url(next_url):
+                        next_url = url_for('index')
+                    return redirect(next_url)
 
         flash('Login failed', 'danger')
-
 
     context = {
         'login_form': login_form,

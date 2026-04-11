@@ -1,6 +1,33 @@
 import os
 import re
 
+class FolderWalk:
+
+    def __init__(self, base_dir, root_pattern=None, filename_pattern=None):
+        self.base_dir = base_dir
+        if root_pattern is not None:
+            root_pattern = re.compile(root_pattern)
+        self.root_pattern = root_pattern
+        if filename_pattern is not None:
+            filename_pattern = re.compile(filename_pattern)
+        else:
+            filename_pattern = re.compile('.*')
+        self.filename_regex = filename_pattern
+
+    def __iter__(self):
+        for root, dirs, files in os.walk(self.base_dir):
+            if self.root_pattern and self.root_pattern.match(root):
+                for fn in files:
+                    match = self.filename_regex.match(fn)
+                    if match:
+                        path_data = {
+                            'full': os.path.join(root, fn),
+                            'filename': fn,
+                        }
+                        path_data.update(match.groupdict())
+                        yield path_data
+
+
 class FolderArchive:
 
     def __init__(self, dir_format_string, parser=None, use_cache=True):

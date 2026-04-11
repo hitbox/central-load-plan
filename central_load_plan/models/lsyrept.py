@@ -1,3 +1,5 @@
+import logging
+
 from datetime import datetime
 from datetime import time
 
@@ -8,6 +10,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase
 
 from central_load_plan.utils import literal_sql
+
+logger = logging.getLogger(__name__)
 
 class LSYBase(DeclarativeBase):
 
@@ -20,7 +24,7 @@ class FilterMixin:
     def flight_criteria_from_ofp_file(cls, ofp_file):
         """
         Convenience method for creating flight criteria for several different
-        classes. 
+        classes.
         """
         # These criteria are applied to Duty and ItemDaily
         flight_no_value = str(ofp_file.flight_number)
@@ -33,7 +37,7 @@ class FilterMixin:
             sa.func.trim(cls.airport_c_is_dep) == ofp_file.origin_iata,
             cls.departure_date_scd == ofp_file.scheduled_departure_time.date(),
             # departure_time_scd is stored as CHAR(4)
-            cls.departure_time_scd == ofp_file.scheduled_departure_time.strftime('%H%M'),
+            sa.func.trim(cls.departure_time_scd) == ofp_file.scheduled_departure_time.strftime('%H%M'),
         )
 
 
@@ -221,6 +225,7 @@ class LSYCrewMember(TrimmedNameMixin, LSYBase):
                 ItemDaily.flight_criteria_from_ofp_file(ofp_file)
             )
             .order_by('seat_order')
+            .distinct()
         )
 
 
@@ -334,6 +339,7 @@ class Duty(FilterMixin, LSYBase):
                 cls.flight_criteria_from_ofp_file(ofp_file),
                 cls.is_deadhead,
             )
+            .distinct()
         )
 
     @hybrid_property
@@ -605,6 +611,7 @@ class RemarkOfEvent(LSYBase):
                 ItemDaily.flight_criteria_from_ofp_file(ofp_file),
                 cls.is_jumpseat,
             )
+            .distinct()
         )
 
 
@@ -612,7 +619,7 @@ class JumpseatQueryManager:
     """
     Builds queries for known person types (LSYCrewMember, NonCrewMember).
     """
-    
+
     models = {
         'C': (LSYCrewMember, LSYCrewMember.employee_no, LSYCrewMember.trimmed_employee_no),
         'N': (NonCrewMember, NonCrewMember.employee_id, LSYCrewMember.trimmed_employee_no),
@@ -640,6 +647,14 @@ class JumpseatQueryManager:
         )
         return query
 
+def dump_literal_sql(session, query):
+    engine = session.get_bind()
+    return query.compile(
+        engine,
+        compile_kwargs={"literal_binds": True}
+    )
+
+
 def crew_members_from_ofp(session, ofp_file):
     crew_members = []
 
@@ -652,13 +667,16 @@ def crew_members_from_ofp(session, ofp_file):
     jumpseats_query = RemarkOfEvent.jumpseats_query_from_ofp_file(ofp_file)
     deadheads_query = Duty.deadheads_query_from_ofp_file(ofp_file)
 
+    logger.debug(dump_literal_sql(session, crew_query))
     for person in session.execute(crew_query).mappings():
         crew_members.append(person)
 
+    logger.debug(dump_literal_sql(session, jumpseats_query))
     for remark_of_event in session.execute(jumpseats_query).scalars():
         for person in remark_of_event.split_remark_for_jumpseats(session):
             crew_members.append(person)
 
+    logger.debug(dump_literal_sql(session, deadheads_query))
     for person in session.execute(deadheads_query).mappings():
         crew_members.append(person)
 

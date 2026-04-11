@@ -1,6 +1,9 @@
+import logging
 import sqlalchemy as sa
 
 from flask import current_app
+
+logger = logging.getLogger(__name__)
 
 def get_lsyrept_engine(airline_code):
     credentials = current_app.config.get('CREDENTIALS_FOR_AIRLINE', {})
@@ -21,4 +24,5 @@ def get_lsyrept_engine(airline_code):
         except:
             raise
         else:
+            logger.info(engine)
             return engine

@@ -42,7 +42,7 @@ class OFPFileFilterForm(QueryFormMixin, Form):
 
     destination_iata = SelectField()
 
-    filter = SubmitField('Filter')
+    filter = SubmitField('Update filter and sorting')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

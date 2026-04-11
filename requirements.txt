@@ -1,3 +1,4 @@
+concurrent-log-handler
 flask
 flask-login
 flask-sqlalchemy
@@ -11,5 +12,6 @@ passlib[argon2]
 psycopg
 sqlalchemy
 sqlparse
+waitress
 wtforms
 wtforms-sqlalchemy
