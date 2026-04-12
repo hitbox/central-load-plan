@@ -1,4 +1,5 @@
 import json
+import uuid
 
 from datetime import date
 from operator import attrgetter
@@ -109,13 +110,19 @@ class JobTemplateForm(Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Because wtforms-sqlalchemy QuerySelctField does NOT WORK with UUID!
-        self.ofp_condition_id.choices = [(obj.id, obj.name) for obj in select_ofp_conditions()]
-        self.job_type_name.choices = [obj.name for obj in select_job_types()]
+        self.ofp_condition_id.choices = OFPCondition.choices_for_select_field(db.session)
 
 
 class SendToTemplateForm(Form):
 
     email = FormField(EmailAddressForm)
+
+    ofp_condition_id = SelectField()
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.ofp_condition_id.choices = OFPCondition.choices_for_select_field(db.session)
 
 
 def render_field_list(field):

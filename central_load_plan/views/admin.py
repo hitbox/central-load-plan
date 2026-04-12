@@ -141,8 +141,11 @@ ofp_condition_admin_blueprint = Blueprint('ofp_condition', __name__)
 add_url_rule_for_table_listing(
     ofp_condition_admin_blueprint,
     rule = '/ofp-condition',
+    edit_endpoint = '.edit',
     #pagination_factory = lambda: db.paginate(db.select(OFPCondition)),
-    query_form_manager = QueryFormManager(model=OFPCondition),
+    query_form_manager = QueryFormManager(
+        model = OFPCondition,
+    ),
     template = 'table.html',
     table = Table(
         model = Email,

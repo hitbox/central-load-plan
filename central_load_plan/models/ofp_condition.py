@@ -88,6 +88,14 @@ class OFPCondition(CLPBase):
             raise ValueError(f'{value} not in {self.__valid_operators__}')
         return value
 
+    @classmethod
+    def choices_for_select_field(cls, session, include_none=True):
+        choices = [(obj.id, obj.name) for obj in session.scalars(sa.select(cls))]
+        if include_none:
+            item = ('', '(None)')
+            choices.insert(0, item)
+        return choices
+
     def _coerce_value(self, column, value):
         python_type = column.type.python_type
         return python_type(value)
