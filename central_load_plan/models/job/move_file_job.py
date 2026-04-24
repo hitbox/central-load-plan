@@ -22,7 +22,7 @@ class MoveFileJob(Job):
     }
 
     id = sa.Column(
-        sa.Uuid,
+        sa.Uuid(as_uuid=True),
         sa.ForeignKey('job.id'),
         primary_key = True,
         default = uuid.uuid4,

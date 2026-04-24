@@ -4,7 +4,6 @@ import xml.etree.ElementTree as ET
 
 from pprint import pprint
 
-from .xml_parser import NestedXMLField
 from .xml_parser import Parser
 from .xml_parser import XMLField
 
@@ -13,22 +12,38 @@ flight_plan_namespaces = {
     'lsya': 'http://www.lido.net/lsya' ,
 }
 
-class FlightPlanField(XMLField):
+class FlightPlanXMLField(XMLField):
+    """
+    XMLField with the default namespaces for xpaths in and OFP XML file.
+    """
 
     def __init__(self, xpath, **kwargs):
         kwargs.setdefault('namespaces', flight_plan_namespaces)
         super().__init__(xpath, **kwargs)
 
 
-class MELCDLField(XMLField):
+class AircraftEquipmentStatusDescriptionField(FlightPlanXMLField):
 
-    item = FlightPlanField(
+    raw_text = FlightPlanXMLField(
+        './ns:Title',
+        raise_for_exists = False, # allow not found
+    )
+
+
+
+class AircraftEquipmentStatusField(FlightPlanXMLField):
+
+    # expect to be rooted at the MELCDLItem node.
+
+    item = FlightPlanXMLField(
         './ns:ReferenceId',
     )
 
-    description = FlightPlanField(
-        './ns:Title',
-        raise_for_exists = False, # allow not found
+    description_object = AircraftEquipmentStatusDescriptionField(
+        xpath = './ns:Title',
+        namespaces = flight_plan_namespaces,
+        #raise_for_exists = False, # allow not found
+        multiple = False, # only one nested object
     )
 
     def extract(self, elem):
@@ -42,19 +57,19 @@ class MELCDLField(XMLField):
 
 class FlightPlanParser(Parser):
 
-    flight_plan_id = FlightPlanField('.', attr='flightPlanId')
+    flight_plan_id = FlightPlanXMLField('.', attr='flightPlanId')
 
-    flight_origin_date = FlightPlanField(
+    flight_origin_date = FlightPlanXMLField(
         './ns:M633SupplementaryHeader/ns:Flight',
         attr = 'flightOriginDate',
     )
 
-    version_number = FlightPlanField(
+    version_number = FlightPlanXMLField(
         '.', # root <FlightPlan> tag.
         attr = 'flightPlanId',
     )
 
-    flight_number = FlightPlanField(
+    flight_number = FlightPlanXMLField(
         './ns:M633SupplementaryHeader'
         '/ns:Flight'
         '/ns:FlightIdentification'
@@ -62,7 +77,7 @@ class FlightPlanParser(Parser):
         attr = 'number',
     )
 
-    airline_iata_code = FlightPlanField(
+    airline_iata_code = FlightPlanXMLField(
         './ns:M633SupplementaryHeader'
         '/ns:Flight'
         '/ns:FlightIdentification'
@@ -71,154 +86,154 @@ class FlightPlanParser(Parser):
     )
 
     # NEED UNIT Field for now to avoid raising mixed
-    planned_payload_unit = FlightPlanField(
+    planned_payload_unit = FlightPlanXMLField(
         './ns:WeightHeader/ns:Load/ns:EstimatedWeight/ns:Value',
         attr = 'unit',
     )
-    leg_departure_date_utc = FlightPlanField(
+    leg_departure_date_utc = FlightPlanXMLField(
         './ns:M633SupplementaryHeader/ns:Flight',
         attr='scheduledTimeOfDeparture',
     )
 
-    flight_identifier = FlightPlanField(
+    flight_identifier = FlightPlanXMLField(
         'ns:M633SupplementaryHeader/ns:Flight/ns:FlightIdentification/ns:FlightIdentifier',
     )
 
-    estimated_departure_time = FlightPlanField(
+    estimated_departure_time = FlightPlanXMLField(
         './ns:M633SupplementaryHeader/ns:Flight',
         attr='scheduledTimeOfDeparture',
     )
 
-    flight_number = FlightPlanField(
+    flight_number = FlightPlanXMLField(
         './ns:M633SupplementaryHeader/ns:Flight/ns:FlightIdentification/ns:FlightNumber',
         attr='number',
     )
 
-    airline_iata_code = FlightPlanField(
+    airline_iata_code = FlightPlanXMLField(
         './ns:M633SupplementaryHeader/ns:Flight/ns:FlightIdentification/ns:FlightNumber',
         attr='airlineIATACode',
     )
 
-    origin_iata = FlightPlanField(
+    origin_iata = FlightPlanXMLField(
         './ns:M633SupplementaryHeader/ns:Flight/ns:DepartureAirport/ns:AirportIATACode',
     )
 
-    destination_iata = FlightPlanField(
+    destination_iata = FlightPlanXMLField(
         './ns:M633SupplementaryHeader/ns:Flight/ns:ArrivalAirport/ns:AirportIATACode',
     )
 
-    aircraft_registration = FlightPlanField(
+    aircraft_registration = FlightPlanXMLField(
         './ns:M633SupplementaryHeader/ns:Aircraft',
         attr='aircraftRegistration',
     )
 
-    estimated_block_time = FlightPlanField(
+    estimated_block_time = FlightPlanXMLField(
         './ns:FlightPlanSummary/ns:BlockTime/ns:EstimatedTime/ns:Value',
     )
 
-    scheduled_departure_time = FlightPlanField(
+    scheduled_departure_time = FlightPlanXMLField(
         'ns:M633SupplementaryHeader/ns:Flight',
         attr = 'scheduledTimeOfDeparture',
     )
 
-    estimated_time_enroute = FlightPlanField(
+    estimated_time_enroute = FlightPlanXMLField(
         './ns:FlightPlanSummary/ns:FlightTime/ns:EstimatedTime/ns:Value',
     )
 
-    planned_payload = FlightPlanField(
+    planned_payload = FlightPlanXMLField(
         './ns:WeightHeader/ns:Load/ns:EstimatedWeight/ns:Value',
     )
 
-    planned_payload_unit = FlightPlanField(
+    planned_payload_unit = FlightPlanXMLField(
         './ns:WeightHeader/ns:Load/ns:EstimatedWeight/ns:Value',
         attr='unit',
     )
 
-    ramp_fuel = FlightPlanField(
+    ramp_fuel = FlightPlanXMLField(
         './ns:FuelHeader/ns:BlockFuel/ns:EstimatedWeight/ns:Value',
     )
 
-    ramp_fuel_unit = FlightPlanField(
+    ramp_fuel_unit = FlightPlanXMLField(
         './ns:FuelHeader/ns:BlockFuel/ns:EstimatedWeight/ns:Value',
         attr='unit',
     )
 
-    fuel_burn = FlightPlanField(
+    fuel_burn = FlightPlanXMLField(
         './ns:FuelHeader/ns:TripFuel/ns:EstimatedWeight/ns:Value',
     )
 
-    fuel_burn_unit = FlightPlanField(
+    fuel_burn_unit = FlightPlanXMLField(
         './ns:FuelHeader/ns:TripFuel/ns:EstimatedWeight/ns:Value',
         attr='unit',
     )
 
-    taxi_fuel = FlightPlanField(
+    taxi_fuel = FlightPlanXMLField(
         './ns:FuelHeader/ns:TaxiFuel/ns:EstimatedWeight/ns:Value',
     )
 
-    taxi_fuel_unit = FlightPlanField(
+    taxi_fuel_unit = FlightPlanXMLField(
         './ns:FuelHeader/ns:TaxiFuel/ns:EstimatedWeight/ns:Value',
         attr='unit',
     )
 
-    landing_fuel = FlightPlanField(
+    landing_fuel = FlightPlanXMLField(
         './ns:FuelHeader/ns:LandingFuel/ns:EstimatedWeight/ns:Value',
     )
 
-    landing_fuel_unit = FlightPlanField(
+    landing_fuel_unit = FlightPlanXMLField(
         './ns:FuelHeader/ns:LandingFuel/ns:EstimatedWeight/ns:Value',
         attr='unit',
     )
 
-    takeoff_fuel = FlightPlanField(
+    takeoff_fuel = FlightPlanXMLField(
         './ns:FuelHeader/ns:TakeOffFuel/ns:EstimatedWeight/ns:Value',
     )
 
-    takeoff_fuel_unit = FlightPlanField(
+    takeoff_fuel_unit = FlightPlanXMLField(
         './ns:FuelHeader/ns:TakeOffFuel/ns:EstimatedWeight/ns:Value',
         attr='unit',
     )
 
-    mzfw = FlightPlanField(
+    mzfw = FlightPlanXMLField(
         './ns:WeightHeader/ns:ZeroFuelWeight/ns:StructuralLimit/ns:Value',
     )
 
-    mzfw_unit = FlightPlanField(
+    mzfw_unit = FlightPlanXMLField(
         './ns:WeightHeader/ns:ZeroFuelWeight/ns:StructuralLimit/ns:Value',
         attr='unit',
     )
 
-    mtow = FlightPlanField(
+    mtow = FlightPlanXMLField(
         './ns:WeightHeader/ns:TakeoffWeight/ns:OperationalLimit/ns:Value',
     )
 
-    mtow_unit = FlightPlanField(
+    mtow_unit = FlightPlanXMLField(
         './ns:WeightHeader/ns:TakeoffWeight/ns:OperationalLimit/ns:Value',
         attr='unit',
     )
 
-    mldg = FlightPlanField(
+    mldg = FlightPlanXMLField(
         './ns:WeightHeader/ns:LandingWeight/ns:OperationalLimit/ns:Value',
     )
 
-    mldg_unit = FlightPlanField(
+    mldg_unit = FlightPlanXMLField(
         './ns:WeightHeader/ns:LandingWeight/ns:OperationalLimit/ns:Value',
         attr='unit',
     )
 
-    dow = FlightPlanField(
+    dow = FlightPlanXMLField(
         './ns:WeightHeader/ns:DryOperatingWeight/ns:EstimatedWeight/ns:Value',
     )
 
-    dow_unit = FlightPlanField(
+    dow_unit = FlightPlanXMLField(
         './ns:WeightHeader/ns:DryOperatingWeight/ns:EstimatedWeight/ns:Value',
         attr='unit',
     )
 
-    aircraft_equipment_status_list = NestedXMLField(
-        './/ns:MELCDLItems/ns:MELCDLItem',
-        MELCDLField(
-            '', # xpath ignored
+    aircraft_equipment_status_list = FlightPlanXMLField(
+        xpath = './/ns:MELCDLItems',
+        subfield = AircraftEquipmentStatusField(
+            xpath = './ns:MELCDLItem',
             namespaces = flight_plan_namespaces,
         ),
         namespaces = flight_plan_namespaces,
@@ -244,6 +259,7 @@ def main(argv=None):
 
     parser = FlightPlanParser()
     data = dict(parser.parse_path(args.path))
+    pprint(data)
 
     if args.schema:
         ofp_schema = OperationalFlightPlanSchema()

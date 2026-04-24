@@ -31,6 +31,7 @@ class XMLField:
         multiple = False,
         namespaces = None,
         raise_for_exists = True,
+        subfield = None,
     ):
         self.name = name
         self.xpath = xpath
@@ -42,52 +43,38 @@ class XMLField:
             namespaces = {}
         self.namespaces = namespaces
         self.raise_for_exists = raise_for_exists
+        self.subfield = subfield
 
     def __set_name__(self, owner, name):
         self.name = name
 
     def extract(self, root):
-        if self.multiple:
-            elems = root.findall(self.xpath, self.namespaces)
-            if self.raise_for_exists and not elems:
-                raise ValueError(f'No elements found for name={self.name} {self.xpath} on {root=}')
-            values = []
-            for el in elems:
-                val = el.attrib[self.attr] if self.attr else el.text
-                if val is not None:
-                    values.append(self.cast(val))
-            return values or self.default
-        else:
-            el = root.find(self.xpath, self.namespaces)
-            if self.raise_for_exists and el is None:
-                raise ValueError(f'name={self.name} Not found {self.xpath} on {root=}')
-            if el is None:
-                return self.default
-            val = el.attrib[self.attr] if self.attr else el.text
-            if val is None:
-                val = self.default
+        elems = root.findall(self.xpath, self.namespaces)
+
+        if not elems:
+            if self.raise_for_exists:
+                raise ValueError(f'No elements found for name={self.name} {self.xpath}')
+            return self.default
+
+        def extract_one(el):
+            # delegate if subfield exists
+            if self.subfield:
+                return self.subfield.extract(el)
+
+            if self.attr:
+                val = el.attrib[self.attr]
             else:
-                val = self.cast(val)
-            return val
+                val = el.text
+            if val is None:
+                return self.default
+            return self.cast(val)
 
+        results = [extract_one(el) for el in elems if extract_one(el) is not None]
 
-class NestedXMLField(XMLField):
+        if not self.multiple and len(results) > 1:
+            tags = [el.tag for el in elems]
+            raise ValueError(
+                f'Multiple elements {tags=} found for single field name={self.name}'
+            )
 
-    def __init__(self, xpath, subfield, name=None, attr=None, default=None, cast=str, multiple=False, namespaces=None, raise_for_exists=True):
-        super().__init__(
-            xpath = xpath,
-            name = name,
-            attr = attr,
-            default = default,
-            cast = cast,
-            multiple = multiple, # ignored
-            namespaces = namespaces,
-            raise_for_exists = raise_for_exists,
-        )
-        self.subfield = subfield
-
-    def extract(self, elem):
-        list_ = []
-        for elem in elem.findall(self.xpath, self.namespaces):
-            list_.append(self.subfield.extract(elem))
-        return list_
+        return results[0] if results else self.default

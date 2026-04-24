@@ -11,10 +11,10 @@ class SendTo(CLPBase):
 
     __tablename__ = 'send_to'
 
-    id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
+    id = sa.Column(sa.Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     email_from_template_job_id = sa.Column(
-        sa.Uuid,
+        sa.Uuid(as_uuid=True),
         sa.ForeignKey('email_from_template_job.id'),
     )
 
@@ -22,7 +22,7 @@ class SendTo(CLPBase):
         'EmailFromTemplateJob',
     )
 
-    email_id = sa.Column(sa.Uuid, sa.ForeignKey('email.id'))
+    email_id = sa.Column(sa.Uuid(as_uuid=True), sa.ForeignKey('email.id'))
 
     email = sa.orm.relationship(
         'Email',

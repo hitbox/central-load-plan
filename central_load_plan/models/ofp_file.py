@@ -21,7 +21,12 @@ class OFPFile(CLPBase):
 
     id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
 
-    original_path = sa.Column(sa.String, nullable=True)
+    original_path = sa.Column(
+        sa.String,
+        nullable = True,
+        index = True,
+        comment = 'Ingested path. Will often duplicate',
+    )
 
     size = sa.Column(
         sa.Integer,

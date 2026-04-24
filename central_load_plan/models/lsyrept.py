@@ -664,18 +664,18 @@ def crew_members_from_ofp(session, ofp_file):
     }
 
     crew_query = LSYCrewMember.crew_query_from_ofp_file(ofp_file)
-    jumpseats_query = RemarkOfEvent.jumpseats_query_from_ofp_file(ofp_file)
-    deadheads_query = Duty.deadheads_query_from_ofp_file(ofp_file)
 
     logger.debug(dump_literal_sql(session, crew_query))
     for person in session.execute(crew_query).mappings():
         crew_members.append(person)
 
+    jumpseats_query = RemarkOfEvent.jumpseats_query_from_ofp_file(ofp_file)
     logger.debug(dump_literal_sql(session, jumpseats_query))
     for remark_of_event in session.execute(jumpseats_query).scalars():
         for person in remark_of_event.split_remark_for_jumpseats(session):
             crew_members.append(person)
 
+    deadheads_query = Duty.deadheads_query_from_ofp_file(ofp_file)
     logger.debug(dump_literal_sql(session, deadheads_query))
     for person in session.execute(deadheads_query).mappings():
         crew_members.append(person)

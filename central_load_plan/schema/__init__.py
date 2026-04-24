@@ -9,5 +9,4 @@ from .lsyrept import RemarkOfEventSchema
 from .lsyrept import lsyrept_model_schemas
 from .operational_flight_plan import CrewSchema
 from .operational_flight_plan import EFFArchivePathSchema
-from .operational_flight_plan import MELCDLItemSchema
 from .operational_flight_plan import OperationalFlightPlanSchema

@@ -35,23 +35,16 @@ def load_from_archive(config_var):
 
     existing = set(db.session.scalars(db.select(OFPFile.archive_path)).all())
 
+    ofp_schema = OperationalFlightPlanSchema()
+
     flight_plan_parser = FlightPlanParser()
     for path_data in file_walker:
-        path = path_data['full']
+        path = os.path.normpath(path_data['full'])
         # Size check because we're not using the conditions on Job objects.
         if path not in existing and os.path.isfile(path) and os.path.getsize(path) > 0:
-            # Normalize path
-            path = os.path.normpath(path)
-            if os.path.getsize(path) < 1:
-                logger.info('Skip empty file %s', path)
-                continue
-
             # Parse XML for strings
             ofp_strings = flight_plan_parser.parse_path(path)
             ofp_strings['archive_path'] = path
-
-            # Convert strings to Python types.
-            ofp_schema = OperationalFlightPlanSchema()
 
             # Create database object.
             ofp_file = ofp_schema.load(ofp_strings, session=db.session)

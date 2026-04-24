@@ -14,9 +14,12 @@ class FolderWalk:
             filename_pattern = re.compile('.*')
         self.filename_regex = filename_pattern
 
+    def __str__(self):
+        return f'FolderWalk(basedir={self.basedir}, root_pattern={self.root_pattern}, filename_regex={self.filename_regex})'
+
     def __iter__(self):
         for root, dirs, files in os.walk(self.base_dir):
-            if self.root_pattern and self.root_pattern.match(root):
+            if self.root_pattern is None or self.root_pattern.match(root):
                 for fn in files:
                     match = self.filename_regex.match(fn)
                     if match:

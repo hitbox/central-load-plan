@@ -266,6 +266,7 @@ add_url_rule_for_table_listing(
         columns = [
             # Showing the same fields we can filter by.
             TableColumn('Airline', 'airline_iata_code'),
+            TableColumn('Flight', 'flight_number'),
             TableColumn('Date', 'flight_origin_date', cast=mdy_format),
             TableColumn('Orig.', 'origin_iata'),
             TableColumn('Dest.', 'destination_iata'),

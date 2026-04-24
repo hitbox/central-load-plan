@@ -33,6 +33,6 @@ class JobType(CLPBase):
 
     __tablename__ = 'job_type'
 
-    id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
+    id = sa.Column(sa.Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     name = sa.Column(sa.String, nullable=False, unique=True)

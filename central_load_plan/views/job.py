@@ -4,6 +4,7 @@ Command line utilities for processing files with Job objects.
 import glob
 import logging
 import os
+import time
 
 import click
 
@@ -16,7 +17,11 @@ from central_load_plan.models import JobTemplate
 from central_load_plan.models import OFPFile
 from central_load_plan.schema import OperationalFlightPlanSchema
 
+from central_load_plan import service
+
 job_bp = Blueprint('job', __name__)
+
+job_bp.cli.help = 'Command line interface for normal file processing.'
 
 @job_bp.cli.command('process')
 @click.option('--glob_pattern')
@@ -24,9 +29,9 @@ job_bp = Blueprint('job', __name__)
 @click.option('--recursive/--no-recursive')
 def process(glob_pattern, config_var, recursive):
     """
-    Load OFPFile objects from glob pattern and process jobs.
+    Find new files with given glob pattern or names for one from config, and
+    process configured jobs for them.
     """
-    logger = logging.getLogger(f'{__name__}.process')
     if glob_pattern and config_var:
         raise click.UsageError(f'Options are mutually exclusive.')
 
@@ -37,39 +42,35 @@ def process(glob_pattern, config_var, recursive):
     flight_plan_schema = OperationalFlightPlanSchema()
 
     for path in glob.iglob(glob_pattern, recursive=recursive):
-        if os.path.isfile(path):
-            path = os.path.normpath(path)
+        service.process_path(db.session, path, flight_plan_parser, flight_plan_schema)
 
-            ofp_strings = flight_plan_parser.parse_path(path)
-            ofp_strings.update({
-                'original_path': path,
-            })
+@job_bp.cli.command('process-forever')
+@click.option('--glob_pattern')
+@click.option('--config-var')
+@click.option('--recursive/--no-recursive')
+def process_forver(glob_pattern, config_var, recursive):
+    """
+    Find new files with given glob pattern or names for one from config, and
+    process configured jobs for them.
+    """
+    if glob_pattern and config_var:
+        raise click.UsageError(f'Options are mutually exclusive.')
 
-            ofp_file = flight_plan_schema.load(ofp_strings)
+    if config_var:
+        glob_pattern = current_app.config[config_var]
 
-            job_templates = JobTemplate.all_matches_sorted_for_execution(
-                db.session,
-                ofp_file,
-            )
+    flight_plan_parser = FlightPlanParser()
+    flight_plan_schema = OperationalFlightPlanSchema()
 
-            for job_template in job_templates:
-                job = job_template.make_job(ofp_file)
-                db.session.add(job)
-                try:
-                    job.do_work()
-                    db.session.commit()
-                except KeyboardInterrupt:
-                    break
-                except:
-                    db.session.rollback()
-                    logger.exception(
-                        f'An exception occcurred during %s work.',
-                        job_template.name,
-                    )
+    while True:
+        for path in glob.iglob(glob_pattern, recursive=recursive):
+            service.process_path(db.session, path, flight_plan_parser, flight_plan_schema)
+        time.sleep(1)
 
 @job_bp.cli.command('process-existing')
 def process_existing():
     """
+    Run jobs against existing files.
     """
     logger = logging.getLogger(f'{__name__}.process_existing')
 

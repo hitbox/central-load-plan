@@ -25,7 +25,7 @@ class QueryFormManager:
     def get_filter_form(self):
         if callable(self.filter_form_class):
             return self.filter_form_class(request.args, prefix=self.filter_prefix)
-        
+
     def get_sort_form(self):
         if callable(self.sort_form_class):
             return self.sort_form_class(request.args, prefix=self.sort_prefix)

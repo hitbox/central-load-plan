@@ -1,7 +1,8 @@
-from wtforms import Form
-from wtforms import SubmitField
 from wtforms import DateField
+from wtforms import Form
+from wtforms import IntegerField
 from wtforms import SelectField
+from wtforms import SubmitField
 
 from central_load_plan.extension import db
 from central_load_plan.models import OFPFile
@@ -37,6 +38,8 @@ class OFPFileFilterForm(QueryFormMixin, Form):
     airline_iata_code = SelectField()
 
     flight_origin_date = DateField()
+
+    flight_number = IntegerField()
 
     origin_iata = SelectField()
 

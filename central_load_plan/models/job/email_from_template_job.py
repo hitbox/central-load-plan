@@ -24,7 +24,7 @@ class EmailFromTemplateJob(Job):
         'polymorphic_identity': JobTypeEnum.EMAIL_FROM_TEMPLATE.name,
     }
 
-    from_email_id = sa.Column(sa.Uuid, sa.ForeignKey('email.id'))
+    from_email_id = sa.Column(sa.Uuid(as_uuid=True), sa.ForeignKey('email.id'))
 
     from_email = sa.orm.relationship('Email')
 
@@ -42,7 +42,7 @@ class EmailFromTemplateJob(Job):
     )
 
     id = sa.Column(
-        sa.Uuid,
+        sa.Uuid(as_uuid=True),
         sa.ForeignKey('job.id'),
         primary_key = True,
         default = uuid.uuid4,
