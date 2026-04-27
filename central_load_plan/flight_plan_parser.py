@@ -1,16 +1,15 @@
-import os
 import argparse
+import os
 import xml.etree.ElementTree as ET
 
 from pprint import pprint
+from zoneinfo import ZoneInfo
 
+from .models import AircraftEquipmentStatusDescription
+from .constants import flight_plan_namespaces
+from .xml_parser import NestedXMLField
 from .xml_parser import Parser
 from .xml_parser import XMLField
-
-flight_plan_namespaces = {
-    'ns': 'http://aeec.aviation-ia.net/633',
-    'lsya': 'http://www.lido.net/lsya' ,
-}
 
 class FlightPlanXMLField(XMLField):
     """
@@ -21,19 +20,76 @@ class FlightPlanXMLField(XMLField):
         kwargs.setdefault('namespaces', flight_plan_namespaces)
         super().__init__(xpath, **kwargs)
 
+class ConstantField(XMLField):
 
-class AircraftEquipmentStatusDescriptionField(FlightPlanXMLField):
+    def __init__(self, value):
+        self.value = value
+
+    def extract(self, root):
+        return self.value
+
+
+class MethodField(XMLField):
+
+    def __init__(
+        self,
+        func,
+        xpath = '.',
+        name = None,
+        attr = None,
+        default = None,
+        cast = str,
+        multiple = False,
+        namespaces = None,
+        raise_for_exists = True,
+        subfield = None,
+    ):
+        super().__init__(
+            xpath = xpath,
+            name = name,
+            attr = attr,
+            default = default,
+            cast = cast,
+            multiple = multiple,
+            namespaces = namespaces,
+            raise_for_exists = raise_for_exists,
+            subfield = subfield,
+        )
+        self.func = func
+
+    def extract(self, root):
+        value = super().extract(root)
+        return self.func(value)
+
+
+class NestedFlightPlanXMLField(FlightPlanXMLField, NestedXMLField):
+    pass
+
+
+class AircraftEquipmentStatusDescriptionField(NestedFlightPlanXMLField):
+    """
+    Nested XML schema rooted at a <Title> element.
+    """
 
     raw_text = FlightPlanXMLField(
-        './ns:Title',
+        '.',
+        raise_for_exists = False, # allow not found
+    )
+
+    expiration_datetime = MethodField(
+        AircraftEquipmentStatusDescription.make_expiration_datetime_parser(
+            ignore_missing=True, # some do not have expiration date strings
+            text_timezone = ZoneInfo('US/Eastern'), # source text assumed local ILN time.
+        ),
+        '.',
         raise_for_exists = False, # allow not found
     )
 
 
-
-class AircraftEquipmentStatusField(FlightPlanXMLField):
-
-    # expect to be rooted at the MELCDLItem node.
+class AircraftEquipmentStatusField(NestedFlightPlanXMLField):
+    """
+    Nested XML schema rooted at a single <MELCDLItem> element.
+    """
 
     item = FlightPlanXMLField(
         './ns:ReferenceId',
@@ -41,18 +97,9 @@ class AircraftEquipmentStatusField(FlightPlanXMLField):
 
     description_object = AircraftEquipmentStatusDescriptionField(
         xpath = './ns:Title',
-        namespaces = flight_plan_namespaces,
         #raise_for_exists = False, # allow not found
         multiple = False, # only one nested object
     )
-
-    def extract(self, elem):
-        data = {}
-        for name in dir(self):
-            field = getattr(self, name)
-            if isinstance(field, XMLField):
-                data[field.name] = field.extract(elem)
-        return data
 
 
 class FlightPlanParser(Parser):
@@ -231,13 +278,16 @@ class FlightPlanParser(Parser):
     )
 
     aircraft_equipment_status_list = FlightPlanXMLField(
-        xpath = './/ns:MELCDLItems',
+        xpath = './/ns:MELCDLItems/ns:MELCDLItem',
         subfield = AircraftEquipmentStatusField(
-            xpath = './ns:MELCDLItem',
-            namespaces = flight_plan_namespaces,
+            xpath = '.',
+            multiple = False,
+            name = 'mel_cdl_item',
         ),
-        namespaces = flight_plan_namespaces,
-        multiple = True,
+        multiple = True, # many MELCDLItem elements inside the MELCDLItems element.
+        default = list, # empty list if no elements. Entire MELCDLItems
+                        # elements have been observed missing.
+        raise_for_exists = False,
     )
 
     def parse_path(self, path):
@@ -257,16 +307,20 @@ def main(argv=None):
     parser.add_argument('--schema', action='store_true')
     args = parser.parse_args(argv)
 
+    if not os.path.exists(args.path):
+        raise FileNotFoundError(args.path)
+
     parser = FlightPlanParser()
     data = dict(parser.parse_path(args.path))
-    pprint(data)
 
     if args.schema:
+        # Method attributes don't seem to fire here but do in the view.
         ofp_schema = OperationalFlightPlanSchema()
         data = ofp_schema.load(data)
         print('schema loaded')
-
-        # Method attributes don't seem to fire here but do in the view.
+        print(data)
+    else:
+        pprint(data, width=1)
 
 if __name__ == '__main__':
     main()

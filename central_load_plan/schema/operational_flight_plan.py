@@ -2,8 +2,11 @@ import re
 
 from datetime import timedelta
 
+import marshmallow
+
 from marshmallow import Schema
 from marshmallow.fields import Date
+from marshmallow.fields import DateTime
 from marshmallow.fields import Float
 from marshmallow.fields import Integer
 from marshmallow.fields import List
@@ -13,6 +16,7 @@ from marshmallow.fields import String
 from marshmallow.fields import Time
 from marshmallow.validate import OneOf
 from marshmallow.validate import ValidationError
+from marshmallow_sqlalchemy.fields import Nested
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 
 from central_load_plan.extension import db
@@ -82,12 +86,52 @@ def raise_for_mixed_units(data, suffix='_unit', ignore_none=True):
     the_only_unit = next(iter(units))
     return the_only_unit
 
-class AircraftEquipmentStatusDescription(SQLAlchemyAutoSchema):
+class AircraftEquipmentStatusDescriptionSchema(SQLAlchemyAutoSchema):
 
     class Meta:
         model = AircraftEquipmentStatusDescription
         load_instance = True
         sqla_session = db.session
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # raw_text -> instance, lives for this load() call
+        self._description_cache = {}
+
+    def get_instance(self, data):
+        raw_text = data.get('raw_text')
+        if raw_text is None:
+            return None
+
+        # Return already-seen instance from this batch first,
+        # before touching the DB at all.
+        if raw_text in self._description_cache:
+            instance = self._description_cache[raw_text]
+            return instance
+
+        with db.session.no_autoflush:
+            instance = (
+                db.session.query(AircraftEquipmentStatusDescription)
+                .where(AircraftEquipmentStatusDescription.raw_text == raw_text)
+                .one_or_none()
+            )
+
+        if instance is None:
+            ModelClass = self.opts.model
+            expiration_datetime = ModelClass.expiration_datetime_from_raw_text(raw_text, ignore_missing=True)
+            instance = ModelClass(
+                raw_text = raw_text, 
+                expiration_datetime = expiration_datetime,
+            )
+            self._description_cache[raw_text] = instance
+
+        return instance
+
+    #def make_instance(self, data, **kwargs):
+    #    instance = super().make_instance(data, **kwargs)
+    #    if instance.raw_text:
+    #        self._description_cache[instance.raw_text] = instance
+    #    return instance
 
 
 class AircraftEquipmentStatusSchema(SQLAlchemyAutoSchema):
@@ -97,7 +141,7 @@ class AircraftEquipmentStatusSchema(SQLAlchemyAutoSchema):
         load_instance = True
         sqla_session = db.session
 
-    description_object = Nested(AircraftEquipmentStatusDescription, many=False)
+    description_object = Nested(AircraftEquipmentStatusDescriptionSchema, many=False)
 
 
 class CrewMemberSchema(SQLAlchemyAutoSchema):
@@ -121,5 +165,9 @@ class OperationalFlightPlanSchema(SQLAlchemyAutoSchema):
     estimated_time_enroute = Time(format=DURATION_FMT)
 
     # Add relationships
-    aircraft_equipment_status_list = Nested(AircraftEquipmentStatusSchema, many=True)
+    aircraft_equipment_status_list = Nested(
+        AircraftEquipmentStatusSchema,
+        load_default = list,
+        many = True,
+    )
     crewmembers = Nested(CrewMemberSchema, many=True)
