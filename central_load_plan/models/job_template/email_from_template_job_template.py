@@ -59,6 +59,9 @@ class EmailFromTemplateJobTemplate(JobTemplate):
     )
 
     def send_tos_for_conditions(self, ofp_file):
+        """
+        List of matching send-to addresses.
+        """
         send_tos = []
         for send_to_template in self.send_tos:
             # Has OFPCondition and it matches or no condition.
@@ -69,6 +72,9 @@ class EmailFromTemplateJobTemplate(JobTemplate):
             ):
                 send_tos.append(send_to_template.make_job())
         return send_tos
+
+    def is_match(self, ofp_file):
+        return self.ofp_condition.is_match(ofp_file)
 
     def make_job(self, ofp_file):
         return self.__job_class__(
@@ -106,6 +112,7 @@ class EmailFromTemplateJobTemplate(JobTemplate):
         html.append('<p>Subject:</p>')
         html.append(f'<pre class="value">{ subject }</pre>')
 
+        ofp_data['ofp_file'] = ofp_file
         body = rendering.render(self.template_name, ofp_data)
         html.append('<p>Email Body:</p>')
         html.append(f'<pre class="value">{ body }</pre>')

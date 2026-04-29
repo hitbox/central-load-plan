@@ -57,6 +57,9 @@ class JobTemplate(CLPBase):
                 kwargs.setdefault(key, value)
         super().__init__(**kwargs)
 
+    def is_match(self, ofp_file):
+        return self.ofp_condition.is_match(ofp_file)
+
     @classmethod
     def _matches_for_ofp_file(cls, session, ofp_file):
         """

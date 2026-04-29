@@ -83,7 +83,9 @@ class JobTemplateForm(Form):
 
     ofp_condition_id = SelectField('OFP Condition')
 
-    job_type_name = SelectField('Job Type')
+    job_type_name = SelectField('JOB Type')
+
+    template_name = StringField()
 
     min_size = IntegerField(
         render_kw = {
@@ -111,6 +113,8 @@ class JobTemplateForm(Form):
         super().__init__(*args, **kwargs)
         # Because wtforms-sqlalchemy QuerySelctField does NOT WORK with UUID!
         self.ofp_condition_id.choices = OFPCondition.choices_for_select_field(db.session)
+
+        self.job_type_name.choices = [m.name for m in JobTypeEnum]
 
 
 class SendToTemplateForm(Form):

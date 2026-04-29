@@ -9,6 +9,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from .clp_base import CLPBase
+from central_load_plan.parsers import expiration_datetime_from_raw_text
 
 class AircraftEquipmentStatusDescription(CLPBase):
 
@@ -48,35 +49,11 @@ class AircraftEquipmentStatusDescription(CLPBase):
 
     @classmethod
     def expiration_datetime_from_raw_text(cls, raw_text, text_timezone, ignore_missing=False):
-        if text_timezone is None:
-            raise ValueError(f'source timezone info must be given.')
-        lines = raw_text.split(' ' * 4)
-        for line in lines:
-            if line.startswith('Expiration Date: '):
-                break
-        else:
-            # no break
-            if ignore_missing:
-                return None
-            else:
-                raise ValueError(f'Expiration Date line not found in {lines=}')
-
-        line = line.removeprefix('Expiration Date: ')
-
-        formats = [
-            '%m/%d/%Y %I:%M:%S %p',
-            '%m/%d/%Y',
-        ]
-
-        for format_ in formats:
-            try:
-                dt = datetime.strptime(line, format_)
-                dt = dt.replace(tzinfo=text_timezone)
-                return dt.astimezone(timezonelib.utc)
-            except ValueError:
-                pass
-
-        raise ValueError(f'No matching datetime format for {line!r}')
+        return expiration_datetime_from_raw_text(
+            raw_text = raw_text,
+            text_timezone = text_timezone,
+            ignore_missing = ignore_missing,
+        )
 
     @classmethod
     def make_expiration_datetime_parser(cls, ignore_missing=False, text_timezone=None):
@@ -91,11 +68,29 @@ class AircraftEquipmentStatus(CLPBase):
 
     id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
 
+    # TODO
+    # - separate object for duplicates
     item = sa.Column(sa.String)
+
+    item_object_id = sa.Column(
+        sa.Uuid(as_uuid=True),
+        sa.ForeignKey('aircraft_equipment_status_item.id'),
+        nullable = False,
+    )
+
+    item_object = sa.orm.relationship(
+        'AircraftEquipmentStatusItem',
+    )
+
+    item = association_proxy(
+        'item_object',
+        'item_text',
+    )
 
     description_object_id = sa.Column(
         sa.Uuid(as_uuid=True),
         sa.ForeignKey('aircraft_equipment_status_description.id'),
+        nullable = True,
     )
 
     description_object = sa.orm.relationship(
@@ -122,3 +117,12 @@ class AircraftEquipmentStatus(CLPBase):
         'OFPFile',
         back_populates = 'aircraft_equipment_status_list',
     )
+
+
+class AircraftEquipmentStatusItem(CLPBase):
+
+    __tablename__ = 'aircraft_equipment_status_item'
+
+    id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
+
+    item_text = sa.Column(sa.String)

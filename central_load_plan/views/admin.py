@@ -168,15 +168,16 @@ add_url_rule_for_creating(
 # JobTemplate database objects administration
 job_template_admin_blueprint = Blueprint('job_template', __name__)
 
+job_template_forms = {
+    JobTypeEnum.EMAIL_FROM_TEMPLATE.name: EmailFromTemplateJobTemplateForm,
+    JobTypeEnum.FILE_FROM_TEMPLATE.name: FileFromTemplateJobTemplateForm,
+    JobTypeEnum.JSON_FILE.name: JSONOutputJobTemplateForm,
+    JobTypeEnum.MOVE_FILE.name: MoveFileJobTemplateForm,
+}
+
 def job_template_form_for_instance(job_template):
-    if job_template.job_type_name == JobTypeEnum.EMAIL_FROM_TEMPLATE.name:
-        return EmailFromTemplateJobTemplateForm
-    elif job_template.job_type_name == JobTypeEnum.FILE_FROM_TEMPLATE.name:
-        return FileFromTemplateJobTemplateForm
-    elif job_template.job_type_name == JobTypeEnum.JSON_FILE.name:
-        return JSONOutputJobTemplateForm
-    elif job_template.job_type_name == JobTypeEnum.MOVE_FILE.name:
-        return MoveFileJobTemplateForm
+    if job_template.job_type_name in job_template_forms:
+        return job_template_forms[job_template.job_type_name]
 
 add_url_rule_for_table_listing(
     job_template_admin_blueprint,
@@ -190,6 +191,7 @@ add_url_rule_for_table_listing(
             TableColumn('Name', 'name'),
             TableColumn('Job Type', 'job_type_name'),
             TableColumn('OFP Condition', 'ofp_condition.blurb'),
+            TableColumn('Position', 'execution_position'),
         ],
     ),
 )

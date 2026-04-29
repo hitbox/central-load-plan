@@ -21,10 +21,15 @@ ofp_file_bp.cli.help = 'Command line utility to load OFPFile objects from archiv
 
 @ofp_file_bp.cli.command('load-from-archive')
 @click.option(
+    '--commit-every',
+    type = int,
+)
+@click.option(
     '--config-var',
+    required = True,
     help = 'Name of config var of iterable object to get archive OFP paths.'
 )
-def load_from_archive(config_var):
+def load_from_archive(commit_every, config_var):
     """
     Load OFPFile objects from configured glob pattern.
     """
@@ -42,9 +47,10 @@ def load_from_archive(config_var):
     ofp_schema = OperationalFlightPlanSchema()
 
     flight_plan_parser = FlightPlanParser()
-    for path_data in file_walker:
+    for index, path_data in enumerate(file_walker):
         logger.info('examining %s', path_data)
         path = os.path.normpath(path_data['full'])
+
         # Size check because we're not using the conditions on Job objects.
         if path not in existing and os.path.isfile(path) and os.path.getsize(path) > 0:
             # Parse XML for strings
@@ -59,5 +65,9 @@ def load_from_archive(config_var):
 
             db.session.add(ofp_file)
             logger.info('loaded %s', path)
+
+            # commit every N records
+            if commit_every and index % commit_every == 0:
+                db.session.commit()
 
     db.session.commit()

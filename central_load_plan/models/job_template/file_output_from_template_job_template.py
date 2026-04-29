@@ -14,6 +14,7 @@ from .polybase import JobTemplate
 
 class FileOutputFromTemplateJobTemplate(JobTemplate):
 
+    # tightly related "real" job class
     __job_class__ = FileOutputFromTemplateJob
 
     __tablename__ = 'file_output_from_template_job_template'

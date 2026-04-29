@@ -6,6 +6,8 @@ from datetime import timedelta
 from datetime import datetime
 
 import sqlalchemy as sa
+
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import Session
 
 from .clp_base import CLPBase
@@ -46,10 +48,12 @@ class OFPFile(CLPBase):
 
     archive_path = sa.Column(
         sa.String,
-        nullable=True,
+        nullable = True,
+        unique = True,
         info = {
             'help': 'Existing path.',
         },
+        comment = 'Path file was moved to for archiving.',
     )
 
     @property
@@ -59,9 +63,15 @@ class OFPFile(CLPBase):
         else:
             return self.original_path
 
-    flight_plan_id = sa.Column(sa.String, nullable=False)
+    flight_plan_id = sa.Column(
+        sa.String,
+        nullable = False,
+    )
 
-    leg_departure_date_utc = sa.Column(sa.DateTime(timezone=True), nullable=False)
+    leg_departure_date_utc = sa.Column(
+        sa.DateTime(timezone=True),
+        nullable = False,
+    )
 
     flight_origin_date = sa.Column(sa.Date)
 
@@ -71,13 +81,67 @@ class OFPFile(CLPBase):
 
     flight_identifier = sa.Column(sa.String)
 
-    airline_iata_code = sa.Column(sa.String)
+    #airline_iata_code = sa.Column(sa.String)
 
-    origin_iata = sa.Column(sa.String)
+    airline_id = sa.Column(
+        sa.Uuid(as_uuid=True),
+        sa.ForeignKey('airline.id')
+    )
 
-    destination_iata = sa.Column(sa.String)
+    airline_object = sa.orm.relationship(
+        'Airline',
+    )
 
-    aircraft_registration = sa.Column(sa.String)
+    airline_iata_code = association_proxy(
+        'airline_object',
+        'iata_code',
+    )
+
+    origin_airport_id = sa.Column(
+        sa.Uuid(as_uuid=True),
+        sa.ForeignKey('airport.id'),
+        nullable = False,
+    )
+
+    origin_airport = sa.orm.relationship(
+        'Airport',
+        foreign_keys = [origin_airport_id],
+    )
+
+    origin_iata = association_proxy(
+        'origin_airport',
+        'iata_code',
+    )
+
+    destination_airport_id = sa.Column(
+        sa.Uuid(as_uuid=True),
+        sa.ForeignKey('airport.id'),
+        nullable = False,
+    )
+
+    destination_airport = sa.orm.relationship(
+        'Airport',
+        foreign_keys = [destination_airport_id],
+    )
+
+    destination_iata = association_proxy(
+        'destination_airport',
+        'iata_code',
+    )
+
+#    origin_iata = sa.Column(sa.String)
+#
+#    destination_iata = sa.Column(sa.String)
+
+    aircraft_registration_id = sa.Column(
+        sa.Uuid(as_uuid=True),
+        sa.ForeignKey('aircraft_registration.id'),
+        nullable = False,
+    )
+
+    aircraft_registration = sa.orm.relationship(
+        'AircraftRegistration',
+    )
 
     estimated_block_time = sa.Column(sa.Time)
 
@@ -218,7 +282,10 @@ class OFPFile(CLPBase):
         'version_number',
     ]
 
-    def update_from_path(self, session, path):
+    def update_from_archive_path(self, session, path):
+        """
+        Scrape and deserialize the XML data again, and update this object.
+        """
         from central_load_plan.flight_plan_parser import FlightPlanParser
         from central_load_plan.schema import OperationalFlightPlanSchema
 
@@ -231,10 +298,15 @@ class OFPFile(CLPBase):
             # Deserialize
             ofp_schema = OperationalFlightPlanSchema()
             ofp_file = ofp_schema.load(ofp_strings, transient=True)
-            ofp_file.archive_path = path
 
+            ignore = set([
+                'id',
+                'archive_path',
+                'crewmembers',
+                'aircraft_equipment_status_list',
+            ])
             for key in self.__dict_keys__:
-                if key != 'id':
+                if key not in ():
                     try:
                         setattr(self, key, getattr(ofp_file, key))
                     except AttributeError:

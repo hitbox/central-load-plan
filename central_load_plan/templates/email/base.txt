@@ -7,7 +7,7 @@
 {%- block flight %}{% endblock flight -%}
 {%- block message1 %}
 *** ALL PAYLOAD AND FUEL DATA BELOW IN {{ '{' }}{{ unit_for_reporting }}{{ '}' }} ***
-*** BALLAST FUEL IS INCLUDED IN THE RAMP FUEL VALUE ***
+*** BALLAST FUEL IS INCLUDED IN THE  RAMP FUEL VALUE ***
 {%- endblock message1 -%}
 {%- block fuel %}{% endblock fuel -%}
 {%- block weight %}{% endblock weight -%}

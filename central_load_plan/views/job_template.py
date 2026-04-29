@@ -1,6 +1,8 @@
 import click
 import sqlalchemy as sa
 
+from operator import attrgetter
+
 from flask import Blueprint
 from flask import abort
 from flask import current_app
@@ -40,23 +42,25 @@ def list_matching_job_templates(id):
     if ofp_file is None:
         abort(404)
 
-    matches = []
-    for job_template in db.session.scalars(db.select(JobTemplate)):
-        if job_template.ofp_condition.is_match(ofp_file):
-            href = url_for(
-                "job_template.preview_job_template_for_file",
-                job_template_id = job_template.id,
-                ofp_file_id = ofp_file.id,
-            )
-            matches.append(Markup(f'<a href="{href}">{job_template.name}</a>'))
+    # Matching JobTemplate objects
+    job_templates = sorted((jt for jt in db.session.scalars(db.select(JobTemplate)) if jt.is_match(ofp_file)), key=attrgetter('execution_position'))
+
+    items = []
+    for job_template in job_templates:
+        href = url_for(
+            "job_template.preview_job_template_for_file",
+            job_template_id = job_template.id,
+            ofp_file_id = ofp_file.id,
+        )
+        items.append(Markup(f'<a href="{href}">{job_template.name}</a>'))
 
     context = {
         'page_title': Markup(
             f'Matching jobs for file <pre class="value">{ ofp_file.archive_path }</pre>'
         ),
-        'list_items': matches,
+        'list_items': items,
     }
-    return render_template('unordered_list.html', **context)
+    return render_template('ordered_list.html', **context)
 
 @job_template_bp.route('/preview/<uuid:job_template_id>/<uuid:ofp_file_id>')
 def preview_job_template_for_file(job_template_id, ofp_file_id):
@@ -72,7 +76,9 @@ def preview_job_template_for_file(job_template_id, ofp_file_id):
     if ofp_file is None:
         abort(404)
 
-    ofp_file.update_from_path(db.session, ofp_file.archive_path)
+    # DISABLED
+    # # Scrape file and deserialize again, once more before using it on the view.
+    # ofp_file.update_from_archive_path(db.session, ofp_file.archive_path)
 
     context = {
         'markup': job_template.html_preview(ofp_file),

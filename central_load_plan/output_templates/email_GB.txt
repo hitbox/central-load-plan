@@ -8,34 +8,34 @@
 LEG DEPARTURE DATE (UTC): {{ leg_departure_date_utc.strftime('%d%b%y (%H%MZ)').upper() }} VER NO: {{ flight_plan_id }}
 FLT #  ORIG  DEST  TAIL #  STE   STD      ETD    ETA
 {# "FLT #" #}{{ '%-7s'|format(flight_number) -}}
-{# ORIG #}{{ '%-6s'|format(origin_iata) -}}
-{# DEST #}{{ '%-6s'|format(destination_iata) -}}
-{# "TAIL #" #}{{ '%-8s'|format(aircraft_registration) -}}
-{# STE #}{{ '%-6s'|format(estimated_block_time.strftime(tmfmt)) -}}
-{# STD #}{{ '%-9s'|format(scheduled_departure_time.strftime(dtfmt)) -}}
-{# ETD #}{{ '%-7s'|format(estimated_departure_time.strftime(tmfmt)) -}}
-{# ETA #}{{ estimated_arrival_time.strftime(dtfmt) }}
+{# ORIG #}{{ '%-6s'|format(ofp_file.origin_airport.iata_code) -}}
+{# DEST #}{{ '%-6s'|format(ofp_file.destination_airport.iata_code) -}}
+{# "TAIL #" #}{{ '%-8s'|format(ofp_file.aircraft_registration) -}}
+{# STE #}{{ '%-6s'|format(ofp_file.estimated_block_time.strftime(tmfmt)) -}}
+{# STD #}{{ '%-9s'|format(ofp_file.scheduled_departure_time.strftime(dtfmt)) -}}
+{# ETD #}{{ '%-7s'|format(ofp_file.estimated_departure_time.strftime(tmfmt)) -}}
+{# ETA #}{{ ofp_file.estimated_arrival_time.strftime(dtfmt) }}
 {% endblock flight -%}
 
 
 {%- block fuel %}
 
 PLND PAYLOAD    RAMP FUEL   FUEL BURN   TAXI FUEL   BALLAST FUEL
-{{ '{:16}'.format(planned_payload|string) -}}
-{{ '{:12}'.format(ramp_fuel|string) -}}
-{{ '{:12}'.format(fuel_burn|string) -}}
-{{ '{:12}'.format(taxi_fuel|string) -}}
-{% if ballast_fuel is none %}00000{% else %}{{ '{:12}'.format(ballast_fuel|string) }}{% endif -%}
+{{ '{:16}'.format(ofp_file.planned_payload|string) -}}
+{{ '{:12}'.format(ofp_file.ramp_fuel|string) -}}
+{{ '{:12}'.format(ofp_file.fuel_burn|string) -}}
+{{ '{:12}'.format(ofp_file.taxi_fuel|string) -}}
+{% if ofp_file.ballast_fuel is none %}00000{% else %}{{ '{:12}'.format(ofp_file.ballast_fuel|string) }}{% endif -%}
 {% endblock fuel -%}
 
 
 {%- block weight %}
 
 MAX PAYLOAD     MZFW        MTOW        MLDG
-{{ '{:16}'.format(max_payload|string) -}}
-{{ '{:12}'.format(mzfw|string) -}}
-{{ '{:12}'.format(mtow|string) -}}
-{{ '{:10}'.format(mldg|string) -}}
+{{ '{:16}'.format(ofp_file.max_payload|string) -}}
+{{ '{:12}'.format(ofp_file.mzfw|string) -}}
+{{ '{:12}'.format(ofp_file.mtow|string) -}}
+{{ '{:10}'.format(ofp_file.mldg|string) -}}
 {% endblock weight -%}
 
 
@@ -43,7 +43,7 @@ MAX PAYLOAD     MZFW        MTOW        MLDG
 
 --- A/C EQUIPMENT STATUS ---
 ITEM          DESCRIPTION
-{%- for status in aircraft_equipment_status_list %}
+{%- for status in ofp_file.aircraft_equipment_status_list %}
 {{ '{:14}'.format(status.item) -}}
 {% if status.description %}{{
     '\n'.join(

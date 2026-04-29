@@ -5,6 +5,8 @@ from wtforms import SelectField
 from wtforms import SubmitField
 
 from central_load_plan.extension import db
+from central_load_plan.models import Airline
+from central_load_plan.models import Airport
 from central_load_plan.models import OFPFile
 
 class QueryFormMixin:
@@ -50,17 +52,16 @@ class OFPFileFilterForm(QueryFormMixin, Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        airlines = db.session.scalars(db.select(OFPFile.airline_iata_code).distinct()).all()
+        # select all Airlines for choices
+        query = db.select(Airline.iata_code)
+        airlines = db.session.scalars(query).all()
         airlines.insert(0, '')
         self.airline_iata_code.choices = airlines
 
         iata_stations = (
             db.session.scalars(
-                db.select(OFPFile.origin_iata.label('station'))
-                .union(
-                    db.select(OFPFile.destination_iata.label('station'))
-                )
-                .order_by('station')
+                db.select(Airport.iata_code)
+                .order_by('iata_code')
             )
             .all()
         )

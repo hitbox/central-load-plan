@@ -10,6 +10,7 @@ from .constants import flight_plan_namespaces
 from .xml_parser import NestedXMLField
 from .xml_parser import Parser
 from .xml_parser import XMLField
+from central_load_plan.parsers.expiration_datetime import make_expiration_datetime_from_raw_text_parser
 
 class FlightPlanXMLField(XMLField):
     """
@@ -30,6 +31,9 @@ class ConstantField(XMLField):
 
 
 class MethodField(XMLField):
+    """
+    Take the value as XMLField would and run a function on it and return it.
+    """
 
     def __init__(
         self,
@@ -77,12 +81,24 @@ class AircraftEquipmentStatusDescriptionField(NestedFlightPlanXMLField):
     )
 
     expiration_datetime = MethodField(
-        AircraftEquipmentStatusDescription.make_expiration_datetime_parser(
-            ignore_missing=True, # some do not have expiration date strings
+        func = make_expiration_datetime_from_raw_text_parser(
+            ignore_missing = True, # some do not have expiration date strings
             text_timezone = ZoneInfo('US/Eastern'), # source text assumed local ILN time.
+            ignore_no_match = True, # some date strings are just impossible
         ),
-        '.',
+        xpath = '.',
         raise_for_exists = False, # allow not found
+    )
+
+
+class AircraftEquipmentStatusItemField(NestedFlightPlanXMLField):
+    """
+    Nested XML schema rooted at a <Title> element.
+    """
+
+    item_text = FlightPlanXMLField(
+        './ns:ReferenceId',
+        raise_for_exists = True,
     )
 
 
@@ -91,15 +107,40 @@ class AircraftEquipmentStatusField(NestedFlightPlanXMLField):
     Nested XML schema rooted at a single <MELCDLItem> element.
     """
 
-    item = FlightPlanXMLField(
-        './ns:ReferenceId',
+    item_object = AircraftEquipmentStatusItemField(
+        '.',
     )
 
     description_object = AircraftEquipmentStatusDescriptionField(
         xpath = './ns:Title',
-        #raise_for_exists = False, # allow not found
+        raise_for_exists = False, # Title is some times missing.
         multiple = False, # only one nested object
     )
+
+
+class AirportXMLField(NestedFlightPlanXMLField):
+
+    iata_code = FlightPlanXMLField(
+        './ns:AirportIATACode',
+    )
+
+
+class AircraftRegistrationXMLField(NestedFlightPlanXMLField):
+
+    registration_number = FlightPlanXMLField(
+        './ns:Aircraft',
+        name = 'registration_number',
+        attr = 'aircraftRegistration',
+    )
+
+
+class AirlineXMLField(NestedFlightPlanXMLField):
+
+    iata_code = FlightPlanXMLField(
+        xpath = '.',
+        attr = 'airlineIATACode',
+    )
+
 
 
 class FlightPlanParser(Parser):
@@ -124,12 +165,17 @@ class FlightPlanParser(Parser):
         attr = 'number',
     )
 
-    airline_iata_code = FlightPlanXMLField(
-        './ns:M633SupplementaryHeader'
-        '/ns:Flight'
-        '/ns:FlightIdentification'
-        '/ns:FlightNumber',
-        attr = 'airlineIATACode',
+    # XXX: replaced below
+    #airline_iata_code = FlightPlanXMLField(
+    #    './ns:M633SupplementaryHeader/ns:Flight/ns:FlightIdentification/ns:FlightNumber',
+    #    attr = 'airlineIATACode',
+    #)
+
+    airline_object = AirlineXMLField(
+        xpath = './ns:M633SupplementaryHeader'
+                '/ns:Flight'
+                '/ns:FlightIdentification'
+                '/ns:FlightNumber',
     )
 
     # NEED UNIT Field for now to avoid raising mixed
@@ -156,22 +202,33 @@ class FlightPlanParser(Parser):
         attr='number',
     )
 
-    airline_iata_code = FlightPlanXMLField(
-        './ns:M633SupplementaryHeader/ns:Flight/ns:FlightIdentification/ns:FlightNumber',
-        attr='airlineIATACode',
+    origin_airport = AirportXMLField(
+        './ns:M633SupplementaryHeader/ns:Flight/ns:DepartureAirport',
     )
 
-    origin_iata = FlightPlanXMLField(
-        './ns:M633SupplementaryHeader/ns:Flight/ns:DepartureAirport/ns:AirportIATACode',
+    #origin_iata = FlightPlanXMLField(
+    #    './ns:M633SupplementaryHeader/ns:Flight/ns:DepartureAirport',
+    #)
+
+    destination_airport = AirportXMLField(
+        './ns:M633SupplementaryHeader/ns:Flight/ns:ArrivalAirport',
     )
 
-    destination_iata = FlightPlanXMLField(
-        './ns:M633SupplementaryHeader/ns:Flight/ns:ArrivalAirport/ns:AirportIATACode',
-    )
+    #destination_iata = FlightPlanXMLField(
+    #    './ns:M633SupplementaryHeader/ns:Flight/ns:ArrivalAirport/ns:AirportIATACode',
+    #)
 
     aircraft_registration = FlightPlanXMLField(
-        './ns:M633SupplementaryHeader/ns:Aircraft',
-        attr='aircraftRegistration',
+        './ns:M633SupplementaryHeader',
+        subfield = FlightPlanXMLField(
+            './ns:Aircraft',
+            name = 'registration_number',
+            attr = 'aircraftRegistration',
+        ),
+    )
+
+    aircraft_registration = AircraftRegistrationXMLField(
+        './ns:M633SupplementaryHeader',
     )
 
     estimated_block_time = FlightPlanXMLField(
@@ -203,6 +260,32 @@ class FlightPlanParser(Parser):
     ramp_fuel_unit = FlightPlanXMLField(
         './ns:FuelHeader/ns:BlockFuel/ns:EstimatedWeight/ns:Value',
         attr='unit',
+    )
+
+    # EXAMPLE:
+    # <AdditionalFuels>
+    # archive/GB/2025-03-05/KSCKKCVG-std.091103.xml
+    # <AdditionalFuel reason="BallastFuel">
+    #     <EstimatedWeight>
+    #         <Value unit="lb">10000</Value>
+    #     </EstimatedWeight>
+    #     <Duration>
+    #         <Value>PT0H0M00S</Value>
+    #     </Duration>
+    # </AdditionalFuel>
+    ballast_fuel = FlightPlanXMLField(
+        xpath = './ns:FuelHeader/ns:AdditionalFuels'
+                '/ns:AdditionalFuel[@reason="BallastFuel"]'
+                '/ns:EstimatedWeight/ns:Value',
+        raise_for_exists = False, # Title is some times missing.
+    )
+
+    ballast_fuel_unit = FlightPlanXMLField(
+        xpath = './ns:FuelHeader/ns:AdditionalFuels'
+                '/ns:AdditionalFuel[@reason="BallastFuel"]'
+                '/ns:EstimatedWeight/ns:Value',
+        attr = 'unit',
+        raise_for_exists = False, # Title is some times missing.
     )
 
     fuel_burn = FlightPlanXMLField(

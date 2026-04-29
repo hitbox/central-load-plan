@@ -2,6 +2,9 @@ import os
 import re
 
 class FolderWalk:
+    """
+    Simple os.walk with regex patterns for selecting.
+    """
 
     def __init__(self, base_dir, root_pattern=None, filename_pattern=None):
         self.base_dir = base_dir
