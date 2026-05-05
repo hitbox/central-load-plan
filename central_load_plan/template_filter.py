@@ -1,3 +1,7 @@
+"""
+Custom Jinja template filters.
+"""
+
 def combine(*args):
     """
     Jinja filter to combine zero or more dicts into one.
@@ -12,4 +16,7 @@ def combine(*args):
 
 
 def init_app(app):
+    """
+    Add template filters to flask app.
+    """
     app.jinja_env.filters['combine'] = combine

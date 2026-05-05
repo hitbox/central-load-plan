@@ -5,7 +5,9 @@ from central_load_plan.extension import db
 class QueryFormManager:
     """
     Coordinate filtering and sorting forms for a model, generating queries from
-    request args.
+    request arguments.
+    This helps with (de)serializing data from the frontend as we need to
+    partition it by filtering and sorting.
     """
 
     def __init__(

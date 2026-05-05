@@ -1,9 +1,18 @@
+"""
+Declarative style XML parsing.
+"""
 import xml.etree.ElementTree as ET
 
 class Parser:
+    """
+    Main XML Parser class.
+    """
 
     @classmethod
     def fields(cls):
+        """
+        Generate the declarative xml fields defined on a subclass.
+        """
         for name in dir(cls):
             attr = getattr(cls, name)
             if isinstance(attr, XMLField):
@@ -11,6 +20,9 @@ class Parser:
 
     @classmethod
     def parse_path(cls, path):
+        """
+        Parse and return the data from an XML file.
+        """
         tree = ET.parse(path)
         root = tree.getroot()
         data = {}
@@ -20,6 +32,10 @@ class Parser:
 
 
 class XMLField:
+    """
+    A declarative XML field class. Uses xpath from some root element to find
+    data from an attribute or just the text of the element.
+    """
 
     def __init__(
         self,
@@ -33,6 +49,23 @@ class XMLField:
         raise_for_exists = True,
         subfield = None,
     ):
+        """
+        :param xpath: An xpath string to find elment(s) relative to some other
+        element.
+        :param name: Name to use for key in data dictionary. Usually taken from
+        the name an instance of this class is assigned to. Argument form mainly
+        for subfield.
+        :param attr: If not None, name of attribute of xpath element to take as
+        the value when parsing.
+        :param default: Default value to return for parsing.
+        :param cast: Callable to finalize value for returning.
+        :param multiple: Flag to allow many values returned in a list.
+        :param namespaces: Dictionary to use when searching with xpath.
+        :param raise_for_exists: Flag to raise error if element is not found.
+        :param subfield: If not None, should be an object with .extract method
+        to defer to for getting final value to return. Used to nest data
+        structures.
+        """
         self.name = name
         self.xpath = xpath
         self.attr = attr
@@ -47,9 +80,15 @@ class XMLField:
         self.subfield = subfield
 
     def __set_name__(self, owner, name):
+        """
+        Get the name for this instance from assignment.
+        """
         self.name = name
 
     def extract(self, root):
+        """
+        Extract text or attribute from xpath element found, relative to `root`.
+        """
         elems = root.findall(self.xpath, self.namespaces)
 
         if not elems and self.raise_for_exists:
@@ -99,6 +138,11 @@ class XMLField:
 
 
 class NestedXMLField(XMLField):
+    """
+    Exists to make XMLField `.extract` behave like Parser.parse_path and simply
+    return a dictionary of the extracted data. Instead of trying to delegate to
+    subfield.
+    """
 
     def extract(self, root):
         elems = root.findall(self.xpath, self.namespaces)
