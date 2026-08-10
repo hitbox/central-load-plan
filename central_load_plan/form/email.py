@@ -20,7 +20,6 @@ class EmailForm(Form):
 
 
 def render_only_the_field_input(form):
-    breakpoint()
     html = ['<ul>']
     for field in field_list:
         html.append(f'{field()}')

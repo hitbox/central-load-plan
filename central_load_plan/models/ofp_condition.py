@@ -126,7 +126,6 @@ class OFPCondition(CLPBase):
 
         op = self.__valid_operators__[self.operator]
 
-        #ofp_file_column = ofp_file_mapper.columns[self.ofp_key]
         ofp_file_column = getattr(ofp_file, self.ofp_key)
 
         values = [ofp_value.value for ofp_value in self.values]

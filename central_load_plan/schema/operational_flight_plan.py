@@ -148,7 +148,6 @@ class AircraftEquipmentStatusItemSchema(SQLAlchemyAutoSchema):
     def get_instance(self, data, *args, **kwargs):
         item_text = data.get('item_text')
         if not isinstance(item_text, str):
-            breakpoint()
             return None
 
         cache = db.session.info.setdefault(f'{self.__class__.__name__}_cache', {})

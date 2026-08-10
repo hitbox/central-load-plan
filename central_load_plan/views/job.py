@@ -46,13 +46,17 @@ def process(glob_pattern, config_var, recursive):
 
 @job_bp.cli.command('process-forever')
 @click.option('--glob_pattern')
-@click.option('--config-var')
+@click.option('--config-var', help='Name of key in config to get glob pattern.')
 @click.option('--recursive/--no-recursive')
-def process_forver(glob_pattern, config_var, recursive):
+def process_forever(glob_pattern, config_var, recursive):
     """
+    The normal file processing, email sending, and file moving loop. All configured in the database.
+
     Find new files with given glob pattern or names for one from config, and
     process configured jobs for them.
     """
+    logger = logging.getLogger(f'{__name__}.process_forver')
+
     if glob_pattern and config_var:
         raise click.UsageError(f'Options are mutually exclusive.')
 
