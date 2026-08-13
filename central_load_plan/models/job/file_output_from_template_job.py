@@ -35,7 +35,7 @@ class FileOutputFromTemplateJob(Job):
         # build ofp data
         ofp_data = self.ofp_file.as_dict_with_crew()
 
-        content = rendering.render(self.template_name, ofp_data)
+        content = rendering.render(self.template_name, ofp_data, self.ofp_file)
 
         destination = self.output_path.format(**ofp_data)
 

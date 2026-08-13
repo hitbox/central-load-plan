@@ -56,3 +56,5 @@ class MoveFileJob(Job):
         shutil.move(self.ofp_file.original_path, destination)
 
         self.ofp_file.archive_path = destination
+
+        logger.info('move %r to %r', self.ofp_file.original_path, destination)

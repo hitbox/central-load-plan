@@ -23,6 +23,8 @@ job_bp = Blueprint('job', __name__)
 
 job_bp.cli.help = 'Command line interface for normal file processing.'
 
+logger = logging.getLogger(__name__)
+
 @job_bp.cli.command('process')
 @click.option('--glob_pattern')
 @click.option('--config-var')
@@ -48,6 +50,15 @@ def process(glob_pattern, config_var, recursive):
 @click.option('--glob_pattern')
 @click.option('--config-var', help='Name of key in config to get glob pattern.')
 @click.option('--recursive/--no-recursive')
+def process_forever_command(glob_pattern, config_var, recursive):
+    """
+    The normal file processing, email sending, and file moving loop. All configured in the database.
+
+    Find new files with given glob pattern or names for one from config, and
+    process configured jobs for them.
+    """
+    process_forever(glob_pattern, config_var, recursive)
+
 def process_forever(glob_pattern, config_var, recursive):
     """
     The normal file processing, email sending, and file moving loop. All configured in the database.
@@ -55,7 +66,7 @@ def process_forever(glob_pattern, config_var, recursive):
     Find new files with given glob pattern or names for one from config, and
     process configured jobs for them.
     """
-    logger = logging.getLogger(f'{__name__}.process_forver')
+    logger = logging.getLogger(f'{__name__}.process_forever')
 
     if glob_pattern and config_var:
         raise click.UsageError(f'Options are mutually exclusive.')
@@ -66,6 +77,7 @@ def process_forever(glob_pattern, config_var, recursive):
     flight_plan_parser = FlightPlanParser()
     flight_plan_schema = OperationalFlightPlanSchema()
 
+    logger.info('starting')
     while True:
         for path in glob.iglob(glob_pattern, recursive=recursive):
             service.process_path(db.session, path, flight_plan_parser, flight_plan_schema)

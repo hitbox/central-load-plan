@@ -1,4 +1,6 @@
+import code
 import glob
+import json
 import logging
 import os
 
@@ -8,12 +10,16 @@ import click
 
 from flask import Blueprint
 from flask import current_app
+from sqlalchemy.orm import Session
 
+from central_load_plan.engine import get_lsyrept_engine
 from central_load_plan.extension import db
 from central_load_plan.flight_plan_parser import FlightPlanParser
 from central_load_plan.models import OFPFile
 from central_load_plan.models.archive import FolderWalk
+from central_load_plan.models.lsyrept import crew_members_from_ofp
 from central_load_plan.schema import OperationalFlightPlanSchema
+from central_load_plan.service import build_jobs
 
 ofp_file_bp = Blueprint('ofp_file', __name__)
 
@@ -71,3 +77,35 @@ def load_from_archive(commit_every, config_var):
                 db.session.commit()
 
     db.session.commit()
+
+@ofp_file_bp.cli.command('adhoc')
+@click.option('--limit', type=int, default=10)
+def adhoc(limit):
+    """
+    Re-send/re-do the JSON output jobs' work for some amount of recent ofp file
+    database objects.
+    """
+    # RESEND JSON FILES
+    logger = logging.getLogger(f'{__name__}.load_from_archive')
+    query = (
+        db.select(OFPFile)
+        .where(OFPFile.archive_path.is_not(None))
+        .order_by(OFPFile.mtime.desc())
+        .limit(limit)
+    )
+    files = db.session.scalars(query).all()
+
+    flight_plan_parser = FlightPlanParser()
+    flight_plan_schema = OperationalFlightPlanSchema()
+
+    logger.info('resending json files')
+
+    has_crew = []
+    files_and_jobs = []
+    for ofp_file in files:
+        jobs = build_jobs(db.session, ofp_file.archive_path, flight_plan_parser, flight_plan_schema)
+        ofp_data = ofp_file.as_dict_with_crew()
+        for job in jobs:
+            if job.job_type_name == 'JSON_FILE':
+                job.do_work()
+                click.echo(ofp_file.archive_path)

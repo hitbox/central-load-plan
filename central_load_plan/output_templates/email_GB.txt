@@ -10,7 +10,7 @@ FLT #  ORIG  DEST  TAIL #  STE   STD      ETD    ETA
 {# "FLT #" #}{{ '%-7s'|format(flight_number) -}}
 {# ORIG #}{{ '%-6s'|format(ofp_file.origin_airport.iata_code) -}}
 {# DEST #}{{ '%-6s'|format(ofp_file.destination_airport.iata_code) -}}
-{# "TAIL #" #}{{ '%-8s'|format(ofp_file.aircraft_registration) -}}
+{# "TAIL #" #}{{ '%-8s'|format(ofp_file.aircraft_registration.registration_number) -}}
 {# STE #}{{ '%-6s'|format(ofp_file.estimated_block_time.strftime(tmfmt)) -}}
 {# STD #}{{ '%-9s'|format(ofp_file.scheduled_departure_time.strftime(dtfmt)) -}}
 {# ETD #}{{ '%-7s'|format(ofp_file.estimated_departure_time.strftime(tmfmt)) -}}

@@ -17,14 +17,14 @@ def get_lsyrept_engine(airline_code):
         'LSYREPT_FALLBACK_DATABASE_URI',
     ]
     for name in keys:
-        uri = current_app.config.get(name)
+        database_uri = current_app.config.get(name)
 
         # Create new URI with credentials for airline
         creds = {k:v for k, v in airline_data.items() if k in ('username', 'password')}
-        uri = uri.set(**creds)
+        database_uri = database_uri.set(**creds)
 
         connect_args = airline_data.get('connect_args', {})
-        engine = sa.create_engine(uri, connect_args=connect_args)
+        engine = sa.create_engine(database_uri, connect_args=connect_args)
         try:
             with engine.connect() as conn:
                 pass

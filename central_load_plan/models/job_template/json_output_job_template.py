@@ -59,4 +59,3 @@ class JSONOutputJobTemplate(JobTemplate):
             name = self.name,
             output_path = self.output_path,
         )
-

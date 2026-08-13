@@ -17,6 +17,7 @@ class Email(CLPBase):
     send_tos = sa.orm.relationship(
         'SendTo',
         back_populates = 'email',
+        cascade = 'all, delete-orphan',
     )
 
     def address_for_ofp_data(self, ofp_data):

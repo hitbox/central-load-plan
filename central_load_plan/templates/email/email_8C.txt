@@ -10,7 +10,7 @@ FLT #  ORIG  DEST  TAIL #  STE   STD      ETE    PLANNED BLOCK TIME
 {# "FLT #" #}{{ '%-7s'|format(flight_number) -}}
 {# ORIG #}{{ '%-6s'|format(origin_iata) -}}
 {# DEST #}{{ '%-6s'|format(destination_iata) -}}
-{# "TAIL #" #}{{ '%-8s'|format(aircraft_registration) -}}
+{# "TAIL #" #}{{ '%-8s'|format(ofp_file.aircraft_registration.registration_number) -}}
 {# STE: scheduled time enroute #}{{ '%-6s'|format(estimated_block_time.strftime(tmfmt)) -}}
 {# STD #}{{ '%-9s'|format(scheduled_departure_time.strftime(dtfmt)) -}}
 {# ETE #}{{ '%-7s'|format(estimated_time_enroute.strftime(tmfmt)) -}}

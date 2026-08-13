@@ -21,6 +21,7 @@ class FlightPlanXMLField(XMLField):
         kwargs.setdefault('namespaces', flight_plan_namespaces)
         super().__init__(xpath, **kwargs)
 
+
 class ConstantField(XMLField):
 
     def __init__(self, value):
@@ -194,12 +195,12 @@ class FlightPlanParser(Parser):
 
     estimated_departure_time = FlightPlanXMLField(
         './ns:M633SupplementaryHeader/ns:Flight',
-        attr='scheduledTimeOfDeparture',
+        attr = 'scheduledTimeOfDeparture',
     )
 
     flight_number = FlightPlanXMLField(
         './ns:M633SupplementaryHeader/ns:Flight/ns:FlightIdentification/ns:FlightNumber',
-        attr='number',
+        attr = 'number',
     )
 
     origin_airport = AirportXMLField(

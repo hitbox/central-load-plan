@@ -3,13 +3,14 @@ import operator as py_operator
 
 import sqlalchemy as sa
 
-from sqlalchemy.ext.orderinglist import ordering_list
 from flask_login import UserMixin
-from central_load_plan import rendering
-from central_load_plan.constants import APPNAME
 from lxml import etree
 from passlib.hash import argon2
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.orderinglist import ordering_list
+
+from central_load_plan import rendering
+from central_load_plan.constants import APPNAME
 
 from .clp_base import CLPBase
 from .ofp_file import OFPFile
@@ -137,6 +138,20 @@ class OFPCondition(CLPBase):
             return ofp_file_key_value in values
         else:
             return op(ofp_file_key_value, values[0])
+
+    @classmethod
+    def get_or_create(cls, **kwargs):
+        from central_load_plan.extension import db
+
+        query = (
+            db.session.scalars(cls)
+            .filter_by(**kwargs)
+        )
+        instance = db.session.scalars(query).one_or_none()
+        if instance is None:
+            instance = cls(**kwargs)
+            db.session.add(instance)
+        return instance
 
     @property
     def condition_as_string(self):

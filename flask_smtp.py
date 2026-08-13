@@ -1,10 +1,11 @@
 import logging
 import smtplib
 
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from flask import current_app
 
-logger = logging.getLogger(__name__)
+from contextlib import redirect_stderr
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 class SMTP:
 
@@ -51,27 +52,27 @@ class SMTP:
         finally:
             server.quit()
 
-    def send_email(self, subject, recipients, body, html=None, sender=None):
+    def _send(self, server, sender, recipients, msg):
+        if self.app.config['SMTP_USE_TLS']:
+            server.starttls()
+
+        username = self.app.config['SMTP_USERNAME']
+        password = self.app.config['SMTP_PASSWORD']
+        if username and password:
+            server.login(username, password)
+
+        try:
+            server.sendmail(sender, recipients, msg.as_string())
+        finally:
+            server.quit()
+
+    def send_email(self, msg, subject, recipients, body, html=None, sender=None):
         if self.app is None:
             raise RuntimeError("Extension not initialized with Flask app")
 
         sender = sender or self.app.config['SMTP_DEFAULT_SENDER']
         if sender is None:
             raise ValueError("No sender configured")
-
-        # Create message
-        if html:
-            msg = MIMEMultipart('alternative')
-        else:
-            msg = MIMEText(body)
-
-        msg['Subject'] = subject
-        msg['From'] = sender
-        msg['To'] = ', '.join(recipients)
-
-        if html:
-            msg.attach(MIMEText(body, 'plain'))
-            msg.attach(MIMEText(html, 'html'))
 
         # Connect and send
         if self.app.config['SMTP_USE_SSL']:
@@ -80,14 +81,21 @@ class SMTP:
             server_class =  smtplib.SMTP
         server = server_class(self.app.config['SMTP_SERVER'], self.app.config['SMTP_PORT'])
 
-        try:
-            if self.app.config['SMTP_USE_TLS'] and not self.app.config['SMTP_USE_SSL']:
-                server.starttls()
-            username = self.app.config['SMTP_USERNAME']
-            password = self.app.config['SMTP_PASSWORD']
-            if username and password:
-                server.login(username, password)
-            server.sendmail(sender, recipients, msg.as_string())
-            logger.info('Sent email %s to %s, from %s', subject, recipients, sender)
-        finally:
-            server.quit()
+        debug_level = int(self.app.config.get('SMTP_DEBUG_LEVEL', '0'))
+        debug_file = self.app.config.get('SMTP_DEBUG_LOG')
+
+        if debug_level:
+            if not debug_file:
+                raise ValueError(
+                    'setting {SMTP_DEBUG_LEVEL=} requires SMTP_DEBUG_LOG set'
+                    ' as path to logging file.')
+
+            # Set SMTP debugging and redirect to file.
+            server.set_debuglevel(debug_level)
+            with open(debug_file, 'a') as smtp_log_file:
+                with redirect_stderr(smtp_log_file):
+                    self._send(server, sender, recipients, msg)
+        else:
+            self._send(server, sender, recipients, msg)
+
+        current_app.logger.info('Sent email %s to %s, from %s', subject, recipients, sender)

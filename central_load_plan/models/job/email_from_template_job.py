@@ -4,6 +4,7 @@ import logging
 
 from datetime import datetime
 from email.message import EmailMessage
+from html import escape
 
 import sqlalchemy as sa
 
@@ -55,12 +56,6 @@ class EmailFromTemplateJob(Job):
 
         config = current_app.config
 
-        smtp_host = config.get('SMTP_HOST')
-        if not smtp_host:
-            raise RuntimeError("SMTP_HOST not configured")
-
-        smtp_port = config.get('SMTP_PORT', 0)
-
         # Build OFP data
         ofp_data = self.ofp_file.as_dict_with_crew()
 
@@ -74,6 +69,8 @@ class EmailFromTemplateJob(Job):
             for send_to in self.send_tos
         ]
 
+        to_addresses.append('Carl.Harris@airborneglobal.com')
+
         # Render subject
         subject = self.subject.format(**ofp_data)
 
@@ -83,9 +80,12 @@ class EmailFromTemplateJob(Job):
         msg['From'] = from_addr
         msg['To'] = ', '.join(to_addresses)
 
-        body = rendering.render(self.template_name, ofp_data)
+        body = rendering.render(self.template_name, ofp_data, self.ofp_file)
         msg.set_content(body)
 
+        html_body = f'<pre>{escape(body)}</pre>'
+        msg.add_alternative(html_body, subtype='html')
+
         # Send
-        smtp.send_email(subject, to_addresses, body, sender=from_addr)
-        logger.info('sent email subject=%r, to=%r', subject, to_addresses)
+        smtp.send_email(msg, subject, to_addresses, body, html=html_body, sender=from_addr)
+        logger.info('sent email from=%r, subject=%r, to=%r', from_addr, subject, to_addresses)

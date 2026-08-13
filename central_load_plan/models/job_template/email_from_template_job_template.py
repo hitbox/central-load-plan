@@ -44,6 +44,7 @@ class EmailFromTemplateJobTemplate(JobTemplate):
     send_tos = sa.orm.relationship(
         'SendToTemplate',
         back_populates = 'email_from_template_job_template',
+        cascade = 'all, delete-orphan',
     )
 
     from_email_id = sa.Column(sa.Uuid, sa.ForeignKey('email.id'))

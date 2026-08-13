@@ -1,10 +1,13 @@
 import uuid
+import logging
 
 from operator import attrgetter
 
 import sqlalchemy as sa
 
 from central_load_plan.models.clp_base import CLPBase
+
+logger = logging.getLogger(__name__)
 
 class JobTemplate(CLPBase):
     """
@@ -74,8 +77,8 @@ class JobTemplate(CLPBase):
             if (
                 job_template.ofp_condition.is_match(ofp_file)
                 and ofp_file.size >= job_template.min_size
-                and ofp_file.mtime_age >= job_template.min_age
             ):
+                logger.info('JobTemplate %s matched ofp_file=%s', self, ofp_file)
                 yield job_template
 
     @classmethod

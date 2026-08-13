@@ -72,4 +72,6 @@ def process_path(db_session, path, flight_plan_parser, flight_plan_schema):
         flight_plan_schema = flight_plan_schema,
     )
 
-    run_jobs(db_session, jobs)
+    if jobs:
+        logger.info('jobs for %s, %s', path, jobs)
+        run_jobs(db_session, jobs)

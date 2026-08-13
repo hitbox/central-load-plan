@@ -60,7 +60,7 @@ def fullv1(status, **textwrap_options):
 
     return description
 
-def render(template, data):
+def render(template, data, ofp_file):
     """
     Render email body text from airline specific template.
     """
@@ -69,6 +69,7 @@ def render(template, data):
         textwrap = textwrap,
         clean_remove = clean_remove,
         fullv1 = fullv1,
+        ofp_file = ofp_file,
     )
     context.update(data)
     return template.render(**context)

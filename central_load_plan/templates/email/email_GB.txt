@@ -10,7 +10,7 @@ FLT #  ORIG  DEST  TAIL #  STE   STD      ETD    ETA
 {# "FLT #" #}{{ '%-7s'|format(flight_number) -}}
 {# ORIG #}{{ '%-6s'|format(origin_iata) -}}
 {# DEST #}{{ '%-6s'|format(destination_iata) -}}
-{# "TAIL #" #}{{ '%-8s'|format(aircraft_registration) -}}
+{# "TAIL #" #}{{ '%-8s'|format(aircraft_registration.registration_number) -}}
 {# STE #}{{ '%-6s'|format(estimated_block_time.strftime(tmfmt)) -}}
 {# STD #}{{ '%-9s'|format(scheduled_departure_time.strftime(dtfmt)) -}}
 {# ETD #}{{ '%-7s'|format(estimated_departure_time.strftime(tmfmt)) -}}

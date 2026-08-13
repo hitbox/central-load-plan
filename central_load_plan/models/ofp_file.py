@@ -43,6 +43,11 @@ class OFPFile(CLPBase):
     )
 
     @property
+    def mtime_dt(self):
+        if self.mtime:
+            return datetime.fromtimestamp(self.mtime)
+
+    @property
     def mtime_age(self):
         return time.time() - self.mtime
 
@@ -77,9 +82,14 @@ class OFPFile(CLPBase):
 
     version_number = sa.Column(sa.String)
 
-    flight_number = sa.Column(sa.Integer)
+    flight_number = sa.Column(sa.String)
 
     flight_identifier = sa.Column(sa.String)
+
+    @property
+    def flight_identifier_first_three(self):
+        if self.flight_identifier:
+            return self.flight_identifier[:3]
 
     #airline_iata_code = sa.Column(sa.String)
 
@@ -113,6 +123,11 @@ class OFPFile(CLPBase):
         'iata_code',
     )
 
+    origin_icao = association_proxy(
+        'origin_airport',
+        'iata_code',
+    )
+
     destination_airport_id = sa.Column(
         sa.Uuid(as_uuid=True),
         sa.ForeignKey('airport.id'),
@@ -129,10 +144,6 @@ class OFPFile(CLPBase):
         'iata_code',
     )
 
-#    origin_iata = sa.Column(sa.String)
-#
-#    destination_iata = sa.Column(sa.String)
-
     aircraft_registration_id = sa.Column(
         sa.Uuid(as_uuid=True),
         sa.ForeignKey('aircraft_registration.id'),
@@ -141,6 +152,11 @@ class OFPFile(CLPBase):
 
     aircraft_registration = sa.orm.relationship(
         'AircraftRegistration',
+    )
+
+    aircraft_registration_number = association_proxy(
+        'aircraft_registration',
+        'registration_number',
     )
 
     estimated_block_time = sa.Column(sa.Time)
@@ -190,6 +206,15 @@ class OFPFile(CLPBase):
     mldg = sa.Column(sa.Integer)
 
     mldg_unit = sa.Column(sa.String)
+
+    @property
+    def max_payload(self):
+        calcs = [
+            self.mtow - self.takeoff_fuel - self.dow,
+            self.mldg - self.landing_fuel - self.dow,
+            self.mzfw - self.dow,
+        ]
+        return min(calcs)
 
     dow = sa.Column(sa.Integer)
 
@@ -261,6 +286,7 @@ class OFPFile(CLPBase):
         'landing_fuel',
         'landing_fuel_unit',
         'leg_departure_date_utc',
+        'max_payload',
         'mldg',
         'mldg_unit',
         'mtow',
@@ -320,6 +346,7 @@ class OFPFile(CLPBase):
         from central_load_plan.models.lsyrept import crew_members_from_ofp
 
         ofp_data = self.as_dict()
+
         engine = get_lsyrept_engine(self.airline_iata_code)
         with Session(engine) as session:
             crewmembers_result = crew_members_from_ofp(session, self)

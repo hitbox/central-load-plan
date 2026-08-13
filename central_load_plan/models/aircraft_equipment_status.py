@@ -87,6 +87,17 @@ class AircraftEquipmentStatus(CLPBase):
         'item_text',
     )
 
+    @property
+    def fak_status(self):
+        if self.item:
+            if self.item.endswith('00-30-FAK'):
+                fak_status = 0
+            elif self.item.endswith('FAK'):
+                fak_status = 1
+            else:
+                fak_status = 99
+            return fak_status
+
     description_object_id = sa.Column(
         sa.Uuid(as_uuid=True),
         sa.ForeignKey('aircraft_equipment_status_description.id'),

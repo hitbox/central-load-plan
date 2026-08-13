@@ -14,12 +14,13 @@ from marshmallow.fields import Integer
 from marshmallow.fields import List
 from marshmallow.fields import Method
 from marshmallow.fields import Nested
+from marshmallow.fields import Pluck
 from marshmallow.fields import String
 from marshmallow.fields import Time
 from marshmallow.validate import OneOf
 from marshmallow.validate import ValidationError
-from marshmallow_sqlalchemy.fields import Nested
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
+from marshmallow_sqlalchemy.fields import Nested
 
 from central_load_plan.extension import db
 from central_load_plan.models import AircraftEquipmentStatus
@@ -36,6 +37,18 @@ DURATION_FMT = 'PT%HH%MM%SS'
 
 excessive_whitespace_re = re.compile(r'\s{2,}')
 DATE_UTC_FORMAT = '%Y-%m-%dZ'
+
+class UTCTime(Time):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('format', '%H%M')
+        super().__init__(*args, **kwargs)
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        result = super()._deserialize(value, attr, data, **kwargs)
+
+        return result.replace(tzinfo=timezone.utc)
+
 
 def compress_whitespace(string):
     return re.sub(excessive_whitespace_re, ' ', string)
@@ -173,9 +186,26 @@ class AircraftEquipmentStatusSchema(SQLAlchemyAutoSchema):
         load_instance = True
         sqla_session = db.session
 
-    item_object = Nested(AircraftEquipmentStatusItemSchema, many=False)
+    item_object = Nested(
+        AircraftEquipmentStatusItemSchema,
+        many=False,
+        load_only= True,
+    )
 
-    description_object = Nested(AircraftEquipmentStatusDescriptionSchema, many=False, allow_none=True)
+    item = String()
+
+    description_object = Nested(
+        AircraftEquipmentStatusDescriptionSchema,
+        load_only = True,
+        many = False,
+        allow_none = True,
+    )
+
+    description = String()
+
+    item = String()
+
+    fak_status = Integer()
 
 
 class CrewMemberSchema(SQLAlchemyAutoSchema):
@@ -320,11 +350,15 @@ class OperationalFlightPlanSchema(SQLAlchemyAutoSchema):
 
     # Overrides
     flight_origin_date = Date(format=DATE_UTC_FORMAT)
-    estimated_block_time = Time(format=DURATION_FMT)
-    estimated_time_enroute = Time(format=DURATION_FMT)
+    estimated_block_time = UTCTime(format=DURATION_FMT)
+    estimated_time_enroute = UTCTime(format=DURATION_FMT)
 
     origin_airport = Nested(AirportSchema)
     destination_airport = Nested(AirportSchema)
+
+    origin_iata = String(dump_only=True)
+    destination_iata = String(dump_only=True)
+    flight_identifier_first_three = String(dump_only=True)
 
     aircraft_registration = Nested(AircraftRegistrationSchema)
 
@@ -333,6 +367,7 @@ class OperationalFlightPlanSchema(SQLAlchemyAutoSchema):
         AircraftEquipmentStatusSchema,
         load_default = list,
         many = True,
+        exclude = ('id',),
     )
     crewmembers = Nested(CrewMemberSchema, many=True)
 
@@ -362,4 +397,3 @@ class OperationalFlightPlanSchema(SQLAlchemyAutoSchema):
             self._cache[registration_number] = instance
 
         return instance
-

@@ -5,7 +5,6 @@ import logging
 
 import sqlalchemy as sa
 
-
 from .job_type import JobTypeEnum
 from .polybase import Job
 
@@ -39,14 +38,13 @@ class JSONOutputJob(Job):
         # build ofp data
         ofp_data = self.ofp_file.as_dict_with_crew()
 
-        dumped = schema.dump(ofp_data)
-
         destination = self.output_path.format(**ofp_data)
 
         dirpath = os.path.dirname(destination)
         os.makedirs(dirpath, exist_ok=True)
 
+        dumped = schema.dump(ofp_data)
         with open(destination, 'w') as outfile:
-            json.dump(dumped, outfile)
+            json.dump({'record': dumped}, outfile)
 
         logger.info('json dumped: %s', destination)
