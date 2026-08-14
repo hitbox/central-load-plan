@@ -78,7 +78,7 @@ class JobTemplate(CLPBase):
                 job_template.ofp_condition.is_match(ofp_file)
                 and ofp_file.size >= job_template.min_size
             ):
-                logger.info('JobTemplate %s matched ofp_file=%s', self, ofp_file)
+                logger.info('JobTemplate %s matched ofp_file=%s', cls, ofp_file)
                 yield job_template
 
     @classmethod
