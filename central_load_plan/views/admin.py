@@ -8,6 +8,8 @@ from markupsafe import Markup
 
 from central_load_plan.extension import db
 from central_load_plan.extension import login_manager
+from central_load_plan.form import EditEmailFromTemplateJobTemplateForm
+from central_load_plan.form import EditOFPConditionForm
 from central_load_plan.form import EmailForm
 from central_load_plan.form import EmailFromTemplateJobTemplateForm
 from central_load_plan.form import FileFromTemplateJobTemplateForm
@@ -15,7 +17,6 @@ from central_load_plan.form import JSONOutputJobTemplateForm
 from central_load_plan.form import JobTemplateForm
 from central_load_plan.form import JobTypeForm
 from central_load_plan.form import MoveFileJobTemplateForm
-from central_load_plan.form import EditOFPConditionForm
 from central_load_plan.form import OFPConditionForm
 from central_load_plan.form import OFPFileFilterForm
 from central_load_plan.form import OFPFileSortForm
@@ -25,6 +26,7 @@ from central_load_plan.html import TableColumn
 from central_load_plan.html import unordered_list
 from central_load_plan.html import yesno
 from central_load_plan.models import Email
+from central_load_plan.models import EmailFromTemplateJobTemplate
 from central_load_plan.models import Job
 from central_load_plan.models import JobTemplate
 from central_load_plan.models import JobType
@@ -217,6 +219,7 @@ job_template_forms = {
 }
 
 def job_template_form_for_instance(job_template):
+    # Select proper form for job_type name.
     if job_template.job_type_name in job_template_forms:
         return job_template_forms[job_template.job_type_name]
 
@@ -360,15 +363,52 @@ add_url_rule_for_creating(
     template = 'admin/form.html',
 )
 
+email_from_template_job_template_blueprint = Blueprint('email_from_template_job_template', __name__)
+admin_bp.register_blueprint(email_from_template_job_template_blueprint)
+
+email_from_template_job_template_blueprint.add_url_rule(
+    rule = '/email-from-template-job-template',
+    view_func = ListView.as_view(
+        name = 'list',
+        edit_endpoint = 'admin.email_from_template_job_template.edit',
+        query_form_manager = QueryFormManager(
+            model = EmailFromTemplateJobTemplate,
+        ),
+        template = 'admin/table.html',
+        table = Table(
+            model = EmailFromTemplateJobTemplate,
+            columns = [
+                TableColumn('Name', 'name'),
+                TableColumn('OFP Condition', 'ofp_condition'),
+                TableColumn('Recipients', 'send_tos_html_list'),
+            ],
+        ),
+    ),
+)
+
+email_from_template_job_template_blueprint.add_url_rule(
+    rule = '/email-from-template-job-template/<uuid:id>',
+    view_func = EditObjectView.as_view(
+        name = 'edit',
+        form_class = EditEmailFromTemplateJobTemplateForm,
+        model = EmailFromTemplateJobTemplate,
+        template = 'admin/form.html',
+    ),
+)
+
 @admin_bp.context_processor
 def add_links_to_context():
     links = [
-        ("admin.users.list", "Users",),
-        ("admin.emails.list", "Emails",),
-        ("admin.ofp_condition.list", "OFPCondition",),
-        ("admin.job_type.list", "JobType",),
-        ("admin.job_template.list", "JobTemplate",),
-        ("admin.ofp_file.list", "OFPFile",),
+        ('admin.users.list', 'Users',),
+        ('admin.emails.list', 'Emails',),
+        (
+            'admin.email_from_template_job_template.list',
+            Markup('Email From Template Job Template'),
+        ),
+        ('admin.ofp_condition.list', 'OFPCondition',),
+        ('admin.job_type.list', 'JobType',),
+        ('admin.job_template.list', 'JobTemplate',),
+        ('admin.ofp_file.list', 'OFPFile',),
     ]
     return {
         'links': links,
@@ -379,19 +419,7 @@ def root():
     """
     List of links to database objects' admin pages.
     """
-    links = [
-        (".users.list", "Users",),
-        (".emails.list", "Emails",),
-        (".ofp_condition.list", "OFPCondition",),
-        (".job_type.list", "JobType",),
-        (".job_template.list", "JobTemplate",),
-        (".ofp_file.list", "OFPFile",),
-    ]
-    context = {
-        'links': links,
-    }
-
-    return render_template('admin/root.html', **context)
+    return render_template('admin/base.html')
 
 # Map models to forms
 MODEL_FORM_MAP = {

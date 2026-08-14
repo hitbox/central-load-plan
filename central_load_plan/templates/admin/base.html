@@ -2,10 +2,11 @@
 
 
 {% block main %}
+    {{ super() }}
     <nav>
         <ul>{% for endpoint, text in links %}
             <li>
-                <a href="{{ url_for(endpoint) }}">{{ text }}</a>
+                <a class="admin-link" href="{{ url_for(endpoint) }}">{{ text }}</a>
             </li>
         {% endfor %}</ul>
     </nav>

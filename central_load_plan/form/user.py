@@ -1,9 +1,9 @@
-from wtforms import Form
+from flask_wtf import FlaskForm
 from wtforms import PasswordField
 from wtforms import StringField
 from wtforms import SubmitField
 
-class UserForm(Form):
+class UserForm(FlaskForm):
     """
     Edit User database object.
     """

@@ -6,7 +6,7 @@
 
 {% block main %}
     {{ super() }}
-    <h3>Edit {{ model.__name__ }}</h3>
+    {% if form.__doc__ %}<h3>{{ form.__doc__ }}</h3>{% endif %}
     <p>{{ model.__doc__ }}</p>
     <form action="{{ url_for(request.endpoint, **request.view_args) }}" method="POST">
         {{ render_form2(form)}}

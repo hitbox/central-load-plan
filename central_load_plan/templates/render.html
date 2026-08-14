@@ -10,8 +10,9 @@
 
 
 {% macro render_form2(form) %}
+    {% if form.hidden_tag %}{{ form.hidden_tag() }}{% endif %}
     <fieldset>
-    {% for field in form | rejectattr('type', 'in', ['SubmitField']) %}
+    {% for field in form | rejectattr('type', 'in', ['SubmitField', 'CSRFTokenField']) %}
     {{ render_field_picocss(field) }}
     {% endfor %}
     </fieldset>
@@ -36,6 +37,7 @@
 {% endmacro %}
 
 
+{#
 {% macro render_field_picocss(field) %}
     <label for="{{ field.id }}">{{ field.label.text }}
     {% if field.flags.required %}<span aria-hidden="true">*</span>{% endif %}
@@ -53,6 +55,7 @@
         <small id="{{ field.id }}-helper">{{ hint }}</small>
     {% endif %}
 {% endmacro %}
+#}
 
 
 {% macro render_by_type(obj) %}

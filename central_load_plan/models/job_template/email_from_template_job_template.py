@@ -47,6 +47,14 @@ class EmailFromTemplateJobTemplate(JobTemplate):
         cascade = 'all, delete-orphan',
     )
 
+    @property
+    def send_tos_html_list(self):
+        html = ['<ul>']
+        for recipient in self.send_tos:
+            html.append(f'<li><address>{recipient.email.address}</address></li>')
+        html.append('</ul>')
+        return Markup(''.join(html))
+
     from_email_id = sa.Column(sa.Uuid, sa.ForeignKey('email.id'))
 
     from_email = sa.orm.relationship('Email')

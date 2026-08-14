@@ -4,9 +4,10 @@ from flask import render_template
 from flask import url_for
 
 from . import converter
+from . import custom_template_filter
 from . import extension
 from . import views
-from . import custom_template_filter
+from .form import widget
 from .middleware import PrefixMiddleware
 
 CONFIG_PREFIX = 'CENTRAL_LOAD_PLAN'
@@ -18,9 +19,11 @@ def create_app():
     app = Flask(__name__)
     app.config.from_envvar(f'{CONFIG_PREFIX}_CONFIG')
 
-    extension.init_app(app)
     converter.init_app(app)
+    extension.init_app(app)
     views.init_app(app)
+    widget.init_app(app)
+
     custom_template_filter.init_app(app)
 
     @app.route('/')

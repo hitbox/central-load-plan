@@ -6,6 +6,7 @@ from operator import attrgetter
 
 import sqlalchemy as sa
 
+from flask_wtf import FlaskForm
 from markupsafe import Markup
 from wtforms import DateField
 from wtforms import FieldList
@@ -34,6 +35,7 @@ from central_load_plan.models import OFPFile
 
 from .email import EmailAddressForm
 from .email import EmailForm
+from .widget import render_field_list
 
 class RequiredJSONFields:
 
@@ -55,7 +57,7 @@ def validate_job_template_parameters_for_job_type(form, field):
     elif form.job_type_id.data == JobTypeEnum.WRITE_FILE.instance().name:
         write_file_required_json_fields(form, field)
 
-class JobTemplateForm(Form):
+class JobTemplateForm(FlaskForm):
 
     name = StringField(
         validators = [
@@ -99,24 +101,22 @@ class JobTemplateForm(Form):
         self.job_type_name.choices = [m.name for m in JobTypeEnum]
 
 
-class SendToTemplateForm(Form):
+class SendToTemplateAddressForm(FlaskForm):
+
+    email = FormField(EmailAddressForm)
+
+
+class SendToTemplateForm(FlaskForm):
 
     email = FormField(EmailAddressForm)
 
     ofp_condition_id = SelectField()
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.ofp_condition_id.choices = OFPCondition.choices_for_select_field(db.session)
 
-
-def render_field_list(field):
-    html = ['<ul>']
-    for subfield in field:
-        html.append(f'{subfield}')
-    html.append('</ul>')
-    return Markup(''.join(html))
 
 class EmailFromTemplateJobTemplateForm(JobTemplateForm):
 

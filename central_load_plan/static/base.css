@@ -36,3 +36,11 @@ pre {
     margin: 0;
     padding: 0;
 }
+
+.admin-link {
+    max-width: 20ch;
+}
+
+address {
+    white-space: nowrap;
+}
