@@ -35,24 +35,6 @@ from central_load_plan.models import OFPFile
 from .email import EmailAddressForm
 from .email import EmailForm
 
-def job_template_name_is_unique(form, field):
-    if not form.delete.data:
-        query = (
-            db.select(JobTemplate)
-            .where(JobTemplate.name == field.data)
-        )
-        exists = db.session.scalars(query).one_or_none()
-        if exists:
-            raise ValidationError(f'Name already exists')
-
-def select_ofp_conditions():
-    query = db.select(OFPCondition)
-    return db.session.scalars(query).all()
-
-def select_job_types():
-    query = db.select(JobType)
-    return db.session.scalars(query).all()
-
 class RequiredJSONFields:
 
     def __init__(self, fieldnames):

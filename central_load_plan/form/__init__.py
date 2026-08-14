@@ -19,6 +19,7 @@ from .job_template import JSONOutputJobTemplateForm
 from .job_template import JobTemplateForm
 from .job_template import MoveFileJobTemplateForm
 from .login import LoginForm
+from .ofp_condition import EditOFPConditionForm
 from .ofp_condition import OFPConditionForm
 from .ofp_file import OFPFileFilterForm
 from .ofp_file import OFPFileSortForm

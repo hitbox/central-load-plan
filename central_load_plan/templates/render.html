@@ -10,12 +10,11 @@
 
 
 {% macro render_form2(form) %}
-    {% if form.errors %}<div>{{ form.errors }}</div>{% endif %}
-    <div class="grid-2">
+    <fieldset>
     {% for field in form | rejectattr('type', 'in', ['SubmitField']) %}
-    {{ render_field(field) }}
+    {{ render_field_picocss(field) }}
     {% endfor %}
-    </div>
+    </fieldset>
     <div class="buttons">
         {% for field in form|selectattr('type', 'in', ['SubmitField']) %}{{ field }}{% endfor %}
     </div>
@@ -34,6 +33,25 @@
                 {% endfor %}</ul>
         {% endif %}
     </div>
+{% endmacro %}
+
+
+{% macro render_field_picocss(field) %}
+    <label for="{{ field.id }}">{{ field.label.text }}
+    {% if field.flags.required %}<span aria-hidden="true">*</span>{% endif %}
+    </label>
+
+    {{ field(id=field.id, aria_invalid="true" if field.errors else "false", aria_describedby=field.id ~ "-helper" if field.errors else none) }}
+
+    {% if field.errors %}
+    <small id="{{ field.id }}-helper">
+        {% for error in field.errors %}
+            {{ error }}{% if not loop.last %}<br>{% endif %}
+        {% endfor %}
+    </small>
+    {% elif hint %}
+        <small id="{{ field.id }}-helper">{{ hint }}</small>
+    {% endif %}
 {% endmacro %}
 
 
@@ -63,7 +81,7 @@
                 <strong>{{ page }}</strong>
             {% endif %}
         {% else %}
-            <span class=ellipsis>…</span>
+            <span class="ellipsis">...</span>
         {% endif %}
     {% endfor %}
 {% endmacro %}

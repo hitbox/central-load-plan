@@ -1,11 +1,24 @@
+import os
 import textwrap
 
-from jinja2 import FileSystemLoader
+from flask import current_app
 from jinja2 import Environment
+from jinja2 import FileSystemLoader
 
-env = Environment(
-    loader = FileSystemLoader('central_load_plan/output_templates'),
-)
+def create_template_environment():
+    template_dir = current_app.config.get('OUTPUT_TEMPLATE_DIR')
+    
+    if template_dir is None:
+        raise ValueError('Missing OUTPUT_TEMPLATE_DIR value')
+
+    if not os.path.isdir(template_dir):
+        raise ValueError(f'{OUTPUT_TEMPLATE_DIR} is not an existing directory.')
+
+    env = Environment(
+        loader = FileSystemLoader(template_dir),
+    )
+
+    return env
 
 def sliding_match(substr, text):
     """
@@ -64,6 +77,7 @@ def render(template, data, ofp_file):
     """
     Render email body text from airline specific template.
     """
+    env = create_template_environment()
     template = env.get_template(template)
     context = dict(
         textwrap = textwrap,

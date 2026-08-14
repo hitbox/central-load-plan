@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 
+from flask_wtf import FlaskForm
 from wtforms import FieldList
 from wtforms import Form
 from wtforms import FormField
@@ -31,6 +32,81 @@ def validate_values_for_operator(form, values_field):
 class OFPConditionValueFormField(Form):
 
     value = StringField(validators=[DataRequired()])
+
+
+class EditOFPConditionForm(FlaskForm):
+
+    name = StringField()
+
+    blurb = StringField()
+
+    def is_ofp_key(form, field):
+        """
+        Validate ofp_key is an attribute of OFPFile for submit/update.
+        """
+        if not form.delete.data:
+            mapper = sa.inspect(OFPFile)
+            if field.data not in mapper.columns.keys():
+                raise ValidationError(f'{field.data} is not a column of OFPFile')
+
+    ofp_key = SelectField(
+        choices = [
+            'flight_number',
+            'flight_identifier_first_three',
+            'flight_identifier',
+            'airline_iata_code',
+            'origin_iata',
+            'origin_icao',
+            'destination_iata',
+            'destination_icao',
+            'aircraft_registration_number',
+            'estimated_block_time',
+            'estimated_time_enroute',
+            'scheduled_departure_time',
+            'estimated_time_enroute',
+            # ...(many others)...
+            'original_path',
+            'size',
+            'mtime',
+            'mtime_dt',
+            'mtime_age',
+            'archive_path',
+            'leg_departure_date_utc',
+            'flight_origin_date',
+            'version_number',
+        ]
+    )
+
+    __human_operator__ = {
+        'eq': 'Equals',
+        'ne': 'Not Equal',
+        'lt': 'Less Than',
+        'le': 'Less Than or Equal',
+        'gt': 'Greater Than',
+        'ge': 'Greater Than or Equal',
+        'contains': 'One Of',
+        'ilike': 'Case Insensitive Search',
+    }
+
+    operator = SelectField(
+        choices = OFPCondition.__operators_choices__,
+        validators=[
+            DataRequired(),
+        ],
+    )
+
+    values = FieldList(
+        FormField(
+            OFPConditionValueFormField
+        ),
+        min_entries=1,
+        widget = DynamicListWidget(),
+        validators = [validate_values_for_operator],
+    )
+
+    submit = SubmitField('Update')
+
+    delete = SubmitField('Delete')
 
 
 class OFPConditionForm(Form):

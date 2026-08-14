@@ -46,7 +46,7 @@ MAX PAYLOAD   MZFW      MTOW       MLDG      OEW/BOW
 ITEM          DESCRIPTION
 {%- for status in aircraft_equipment_status_list|sort(attribute='fak_status') %}
 {{ '{:14}'.format(status.item) -}}
-{% if status.description %}{# see central_load_plan.email NOTES 1 #}{{
+{% if status.description %}{# see central_load_plan/rendering.py #}{{
     fullv1(status, width=80-14, subsequent_indent=' '*14)
 }}{% endif %}
 {% endfor %}

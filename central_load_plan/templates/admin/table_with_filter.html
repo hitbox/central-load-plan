@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
 
 {% from "render.html" import render_form2 %}
@@ -7,6 +7,7 @@
 
 
 {% block main %}
+    {{ super() }}
     {% if model is defined %}
     <h3>{{ model.__name__ }} objects</h3>
     {% endif %}
@@ -17,7 +18,7 @@
             <h3>Filter</h3>
             {{ render_form2(filter_form) }}
             <p>
-                <a href="{{ url_for(request.endpoint) }}">Clear filter and sort</a>
+                <a role="button" href="{{ url_for(request.endpoint) }}">Clear filter and sorting...</a>
             </p>
         </form>
     </div>
@@ -25,10 +26,26 @@
     <h3>SQL</h3>
     <pre class="value">{{ query }}</pre>
     {% endif %}
-    <div class="pagination-container">
-    {% set form_args = sort_form.request_args | combine(filter_form.request_args) %}
-    {{ render_pagination(pagination, request.endpoint, **form_args) }}
-    </div/>
+    {% if pagination.pages > 1 %}
+    <nav>
+        {% set form_args = sort_form.request_args | combine(filter_form.request_args) %}
+        <ul>{% for page in pagination.iter_pages() %}
+            {% if page %}
+                {% if page != pagination.page %}
+                    <li>
+                        <a href="{{ url_for(request.endpoint, page=page, **form_args) }}">
+                            {{ page }}
+                        </a>
+                    </li>
+                {% else %}
+                    <li aria-current="page">{{ page }}</li>
+                {% endif %}
+            {% else %}
+                <li>...</li>
+            {% endif %}
+        {% endfor %}</ul>
+    </nav>
+    {% endif %}
     <table>
         <thead>
             <tr>{% for column in table.columns %}

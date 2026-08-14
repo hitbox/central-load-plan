@@ -4,16 +4,35 @@ import operator as py_operator
 import sqlalchemy as sa
 
 from flask_login import UserMixin
-from lxml import etree
-from passlib.hash import argon2
-from sqlalchemy.ext.hybrid import hybrid_property
+from markupsafe import Markup
 from sqlalchemy.ext.orderinglist import ordering_list
-
-from central_load_plan import rendering
-from central_load_plan.constants import APPNAME
+from sqlalchemy.ext.associationproxy import AssociationProxy
 
 from .clp_base import CLPBase
 from .ofp_file import OFPFile
+
+def get_column_type(model, name):
+    """
+    Get column type attribute from model by name. Drilling for associatonproxy
+    attributes too.
+    """
+    mapper = sa.inspect(model)
+
+    if name in mapper.columns:
+        return mapper.columns[name].type
+
+    attr = getattr(model, name, None)
+
+    if isinstance(attr, AssociationProxy):
+        rel = mapper.relationships[attr.target_collection]
+        return rel.mapper.columns[attr.value_attr].type
+
+    # InstrumentedAttribute/ColumnProperty
+    prop = getattr(attr, 'property', None)
+    if isinstance(prop, ColumnProperty):
+        return prop.columns[0].type
+
+    return None
 
 class OFPCondition(CLPBase):
     """
@@ -37,6 +56,17 @@ class OFPCondition(CLPBase):
     ofp_key = sa.Column(sa.String, nullable=False)
 
     operator = sa.Column(sa.String)
+
+    __operators_choices__ = [
+        ('eq', 'equals'),
+        ('ne', 'not equals'),
+        ('lt', 'less than'),
+        ('le', 'less than or equal'),
+        ('gt', 'greater than'),
+        ('ge', 'greater than or equal'),
+        ('contains', 'contains'),
+        ('ilike', 'case-insensitive regex'),
+    ]
 
     __valid_operators__ = {
         'eq': py_operator.eq,
@@ -98,7 +128,8 @@ class OFPCondition(CLPBase):
         return choices
 
     def _coerce_value(self, column, value):
-        python_type = column.type.python_type
+        type_ = get_column_type(OFPFile, column.key)
+        python_type = type_.python_type
         return python_type(value)
 
     def to_expression(self):
@@ -108,16 +139,16 @@ class OFPCondition(CLPBase):
         """
         ofp_file_mapper = sa.inspect(OFPFile)
 
-        ofp_file_column = ofp_file_mapper.columns[self.ofp_key]
-
         op = self.__valid_operators__[self.operator]
 
-        values = [self._coerce_value(ofp_file_column, value) for value in self.values]
+        values = [ofp_condition_value.value for ofp_condition_value in self.values]
 
-        if self.operator == 'contains':
-            return op(ofp_file_column, values)
-        elif values:
-            return op(ofp_file_column, values[0])
+        if self.operator != 'contains':
+            values = values[0]
+
+        attr = getattr(OFPFile, self.ofp_key)
+
+        return op(attr, values)
 
     def is_match(self, ofp_file):
         """
@@ -176,6 +207,30 @@ class OFPCondition(CLPBase):
                 val_str = ""
 
         return f"{self.ofp_key} {op_sym} {val_str}"
+
+    @property
+    def condition_as_html(self):
+        html = ['<span class="python-expression">']
+
+        # OFPFile key to apply match
+        html.append(f'<span class="key">{self.ofp_key}</span>')
+
+        # Symbol for operator
+        op_sym = self.__symbols__.get(self.operator, self.operator)
+        html.append(f'<span class="operator">{op_sym}</span>')
+
+        if self.values:
+            if len(self.values) > 1:
+                html.append('<ul>')
+                for ofp_conditon_value in self.values:
+                    html.append(f'<li class="literal">{ ofp_conditon_value.value }</li>')
+
+                html.append('</ul>')
+            else:
+                one_value = self.values[0].value
+                html.append(f'<span class="literal">{ one_value }</span>')
+
+        return Markup(''.join(html))
 
 
 class OFPConditionValue(CLPBase):

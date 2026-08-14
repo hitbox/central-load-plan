@@ -24,6 +24,21 @@ class QueryFormManager:
         self.filter_prefix = filter_prefix
         self.sort_prefix = sort_prefix
 
+        self._filter_messages = []
+        self._sort_messages = []
+
+    @property
+    def active_messages(self):
+        return self._filter_messages + self._sort_messages
+
+    @property
+    def filter_messages(self):
+        return self._filter_messages
+
+    @property
+    def sort_messages(self):
+        return self._sort_messages
+
     def get_filter_form(self):
         if callable(self.filter_form_class):
             return self.filter_form_class(request.args, prefix=self.filter_prefix)
@@ -33,7 +48,7 @@ class QueryFormManager:
             return self.sort_form_class(request.args, prefix=self.sort_prefix)
 
     def apply_forms_to_query(self, query):
-        # Apply filters from form
+        # Apply filtering from form
         filter_form = self.get_filter_form()
         if filter_form is not None:
             for field in filter_form:
@@ -58,4 +73,4 @@ class QueryFormManager:
     def get_pagination(self):
         query = db.select(self.model)
         query = self.apply_forms_to_query(query)
-        return db.paginate(query), query
+        return (db.paginate(query), query)
