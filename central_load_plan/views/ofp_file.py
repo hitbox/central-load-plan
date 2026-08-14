@@ -104,7 +104,6 @@ def adhoc(limit):
     files_and_jobs = []
     for ofp_file in files:
         jobs = build_jobs(db.session, ofp_file.archive_path, flight_plan_parser, flight_plan_schema)
-        ofp_data = ofp_file.as_dict_with_crew()
         for job in jobs:
             if job.job_type_name == 'JSON_FILE':
                 job.do_work()
