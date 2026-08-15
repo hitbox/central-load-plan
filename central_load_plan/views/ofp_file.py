@@ -3,6 +3,7 @@ import glob
 import json
 import logging
 import os
+import time
 
 from pprint import pprint
 
@@ -85,7 +86,6 @@ def adhoc(limit):
     Re-send/re-do the JSON output jobs' work for some amount of recent ofp file
     database objects.
     """
-    # RESEND JSON FILES
     logger = logging.getLogger(f'{__name__}.load_from_archive')
     query = (
         db.select(OFPFile)
@@ -100,11 +100,10 @@ def adhoc(limit):
 
     logger.info('resending json files')
 
-    has_crew = []
     files_and_jobs = []
     for ofp_file in files:
         jobs = build_jobs(db.session, ofp_file.archive_path, flight_plan_parser, flight_plan_schema)
         for job in jobs:
-            if job.job_type_name == 'JSON_FILE':
+            if (time.time() - ofp_file.mtime) < 60 * 60 * 3:
                 job.do_work()
-                click.echo(ofp_file.archive_path)
+                click.echo((ofp_file.mtime_dt, ofp_file.archive_path))
