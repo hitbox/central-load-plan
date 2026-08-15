@@ -7,7 +7,7 @@ from jinja2 import FileSystemLoader
 
 def create_template_environment():
     template_dir = current_app.config.get('OUTPUT_TEMPLATE_DIR')
-    
+
     if template_dir is None:
         raise ValueError('Missing OUTPUT_TEMPLATE_DIR value')
 
