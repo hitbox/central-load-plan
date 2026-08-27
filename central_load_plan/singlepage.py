@@ -1,6 +1,8 @@
 from wtforms.widgets import ListWidget
 from markupsafe import Markup
 
+from central_load_plan.form.widget import render_errors_list
+
 class DynamicListWidget(ListWidget):
     """
     ListWidget subclass that renders a FieldList with Add/Remove buttons.
@@ -15,16 +17,12 @@ class DynamicListWidget(ListWidget):
         # Render existing fields
         fields_html = []
         for subfield in field:
-            html = f'<div class="nested-field">{subfield()}'
+            html = [f'<div class="nested-field">{subfield()}']
             if subfield.errors:
-                # render.html:30
-                html += '<ul class="errors">'
-                for error in subfield.errors:
-                    html += '<li>{ error }</li>'
-                html += '</ul>'
-            html += '<button type="button" class="remove-btn">Remove</button>'
-            html += '</div>'
-            fields_html.append(html)
+                html.extend(render_errors_list(subfield.errors))
+            html.append('<button type="button" class="remove-item">Remove</button>')
+            html.append('</div>')
+            fields_html.append(''.join(html))
 
         # Take first field HTML as template (or empty <input> if none)
         if len(field) > 0:
@@ -36,12 +34,12 @@ class DynamicListWidget(ListWidget):
 <div id="{container_id}">
 {"\n".join(fields_html)}
 </div>
-<button type="button" id="{add_id}">Add Item</button>
+<button type="button" id="{add_id}">Add</button>
 
 <template id="{template_id}">
     <div class="nested-field">
         {field_html}
-        <button type="button" class="remove-btn">Remove</button>
+        <button type="button" class="remove-item">Remove</button>
     </div>
 </template>
 
@@ -57,22 +55,24 @@ function reindexItems() {{
     }});
 }}
 
-function attachRemoveEvents() {{
-    container.querySelectorAll('.remove-btn').forEach(btn => {{
-        btn.onclick = () => {{
-            btn.parentElement.remove();
-            reindexItems();
-        }};
-    }});
+function init_remove_events() {{
+    container.querySelectorAll('.remove-item').forEach(
+        function(btn) {{
+            btn.onclick = () => {{
+                btn.parentElement.remove();
+                reindexItems();
+            }};
+        }}
+    );
 }}
 
-attachRemoveEvents();
+init_remove_events();
 
 document.getElementById("{add_id}").addEventListener('click', () => {{
     const clone = document.importNode(template, true);
     container.appendChild(clone);
     reindexItems();
-    attachRemoveEvents();
+    init_remove_events();
 }});
 </script>
 """

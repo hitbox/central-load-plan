@@ -20,12 +20,14 @@ class ListView(View):
         template,
         table,
         query_form_manager,
+        description = None,
         edit_endpoint = None,
         create_endpoint = None,
     ):
         self.template = template
         self.table = table
         self.query_form_manager = query_form_manager
+        self.description = description
         self.edit_endpoint = edit_endpoint
         self.create_endpoint = create_endpoint
 
@@ -35,6 +37,8 @@ class ListView(View):
             'table': self.table,
             'pagination': pagination,
             'query': query,
+            'form_manager': self.query_form_manager,
+            'description': self.description,
         }
 
         context['filter_form'] = self.query_form_manager.get_filter_form()

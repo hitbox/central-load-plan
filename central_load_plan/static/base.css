@@ -8,25 +8,53 @@ pre {
     font-size: 1rem;
 }
 
-[data-href]:hover > * {
-    cursor: pointer;
-    /* important to override stripped tables */
-    background-color: var(--pico-primary-hover-background) !important;
+ul li {
+    /* override picocss */
+    list-style-type: none;
 }
 
-.python-expression {
-    font: monospace;
+address {
+    font-family: monospace;
+    white-space: nowrap;
 }
 
-.python-expression span {
+th, td {
+    vertical-align: top;
+}
+
+ul.value-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+ul.value-list li {
+    display: inline;
+}
+
+.data {
+    font-family: monospace;
+    font-size: 1rem;
+}
+
+.value-list li:not(:last-child)::after {
+    content: ", ";
+}
+
+.expression span {
     margin-right: 1ch;
 }
 
-.python-expression span.key {
+tr:target {
+    outline: 2px solid var(--pico-primary);
+    outline-offset: -2px;
+}
+
+.expression span.key {
     color: var(--pico-muted-color);
 }
 
-.python-expression .literal {
+.expression .literal {
     color: var(--pico-contrast);
 }
 
@@ -41,6 +69,41 @@ pre {
     max-width: 20ch;
 }
 
-address {
-    white-space: nowrap;
+.flashes {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+
+    width: min(30rem, calc(100vw - 2rem));
+}
+
+.flash-success {
+    background: lightgreen;
+    color: darkgreen;
+    border-color: mediumseagreen;
+}
+
+.flash-error {
+    background: mistyrose;
+    color: darkred;
+    border-color: lightcoral;
+}
+
+.flash-warning {
+    background: lemonchiffon;
+    color: darkgoldenrod;
+    border-color: gold;
+}
+
+.flash-info {
+    background: lightblue;
+    color: darkblue;
+    border-color: cornflowerblue;
+}
+
+[data-href]:hover > * {
+    cursor: pointer;
+    /* important to override striped tables */
+    background-color: var(--pico-primary-hover-background) !important;
 }

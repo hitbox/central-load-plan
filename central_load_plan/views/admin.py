@@ -9,12 +9,12 @@ from markupsafe import Markup
 from central_load_plan.extension import db
 from central_load_plan.extension import login_manager
 from central_load_plan.form import EditEmailFromTemplateJobTemplateForm
-from central_load_plan.form import EditOFPConditionForm
+from central_load_plan.form import EditSendToForm
 from central_load_plan.form import EmailForm
 from central_load_plan.form import EmailFromTemplateJobTemplateForm
 from central_load_plan.form import FileFromTemplateJobTemplateForm
 from central_load_plan.form import JSONOutputJobTemplateForm
-from central_load_plan.form import JobTemplateForm
+from central_load_plan.form import JobForm
 from central_load_plan.form import JobTypeForm
 from central_load_plan.form import MoveFileJobTemplateForm
 from central_load_plan.form import OFPConditionForm
@@ -33,6 +33,7 @@ from central_load_plan.models import JobType
 from central_load_plan.models import JobTypeEnum
 from central_load_plan.models import OFPCondition
 from central_load_plan.models import OFPFile
+from central_load_plan.models import SendToTemplate
 from central_load_plan.models import User
 from central_load_plan.query_form_manager import QueryFormManager
 
@@ -56,7 +57,6 @@ def preview_ofp_condition_context(current_context):
     preview_results = db.paginate(query)
 
     table = Table(
-        model = OFPFile,
         columns = [
             TableColumn('Path', 'display_path'),
         ],
@@ -86,36 +86,43 @@ def require_login_and_admin():
 user_admin_blueprint = Blueprint('users', __name__)
 admin_bp.register_blueprint(user_admin_blueprint)
 
-add_url_rule_for_table_listing(
-    user_admin_blueprint,
+user_admin_blueprint.add_url_rule(
     rule = '/users',
-    query_form_manager = QueryFormManager(model=User),
-    #pagination_factory = lambda: db.paginate(db.select(User)),
-    template = 'admin/table.html',
-    table = Table(
-        model = User,
-        columns = [
-            TableColumn('Username', 'username'),
-            TableColumn('Active?', 'is_active', cast=yesno),
-            TableColumn('Admin?', 'is_admin', cast=yesno),
-        ],
+    view_func = ListView.as_view(
+        name = 'list',
+        edit_endpoint = '.edit',
+        query_form_manager = QueryFormManager(
+            model = User,
+        ),
+        template = 'admin/table.html',
+        table = Table(
+            columns = [
+                TableColumn('Username', 'username'),
+                TableColumn('Active?', 'is_active', cast=yesno),
+                TableColumn('Admin?', 'is_admin', cast=yesno),
+            ],
+        ),
     ),
 )
 
-add_url_rule_for_editing(
-    user_admin_blueprint,
+user_admin_blueprint.add_url_rule(
     rule = '/users/<uuid:id>',
-    model = User,
-    form_class = UserForm,
-    template = 'admin/form.html',
+    view_func = EditObjectView.as_view(
+        name = 'edit',
+        model = User,
+        form_class = UserForm,
+        template = 'admin/form.html',
+    ),
 )
 
-add_url_rule_for_creating(
-    user_admin_blueprint,
+user_admin_blueprint.add_url_rule(
     rule = '/users/new',
-    model = User,
-    form_class = UserForm,
-    template = 'admin/form.html',
+    view_func = CreateObjectView.as_view(
+        name = 'create',
+        model = User,
+        template = 'admin/form.html',
+        form_class = UserForm,
+    ),
 )
 
 # Email objects admin
@@ -124,39 +131,45 @@ email_admin_blueprint = Blueprint('emails', __name__)
 admin_bp.register_blueprint(email_admin_blueprint)
 
 # emails.list
-add_url_rule_for_table_listing(
-    email_admin_blueprint,
+email_admin_blueprint.add_url_rule(
     rule = '/emails',
-    query_form_manager = QueryFormManager(
-        model = Email,
-    ),
-    edit_endpoint = '.edit',
-    template = 'admin/table.html',
-    table = Table(
-        model = Email,
-        columns = [
-            TableColumn('Address', 'address'),
-            TableColumn('Display', 'display_name'),
-        ],
+    view_func = ListView.as_view(
+        name = 'list',
+        edit_endpoint = '.edit',
+        query_form_manager = QueryFormManager(
+            model = Email,
+        ),
+        template = 'admin/table.html',
+        table = Table(
+            columns = [
+                TableColumn('Delete?'),
+                TableColumn('Address', 'address'),
+                TableColumn('Display', 'display_name'),
+            ],
+        ),
     ),
 )
 
 # emails.create
-add_url_rule_for_creating(
-    email_admin_blueprint,
+email_admin_blueprint.add_url_rule(
     rule = '/emails/new',
-    model = Email,
-    form_class = EmailForm,
-    template = 'admin/form.html',
+    view_func = CreateObjectView.as_view(
+        name = 'create',
+        model = Email,
+        template = 'admin/form.html',
+        form_class = EmailForm,
+    ),
 )
 
 # emails.edit
-add_url_rule_for_editing(
-    email_admin_blueprint,
+email_admin_blueprint.add_url_rule(
     rule = '/emails/<uuid:id>',
-    model = Email,
-    form_class = EmailForm,
-    template = 'admin/form.html',
+    view_func = EditObjectView.as_view(
+        name = 'edit',
+        model = Email,
+        form_class = EmailForm,
+        template = 'admin/form.html',
+    )
 )
 
 def symbol_for_operator(ofp_condition):
@@ -178,13 +191,14 @@ ofp_condition_admin_blueprint.add_url_rule(
     view_func = ListView.as_view(
         name = 'list',
         edit_endpoint = '.edit',
-        #pagination_factory = lambda: db.paginate(db.select(OFPCondition)),
         query_form_manager = QueryFormManager(
             model = OFPCondition,
         ),
         template = 'admin/table.html',
+        description =
+            'OFPCondition objects are stand-alone objects that can be used for'
+            ' JobTemplate and SendToTemplate objects.',
         table = Table(
-            model = Email,
             columns = [
                 TableColumn('Name', 'name'),
                 TableColumn('Blurb', 'blurb'),
@@ -194,6 +208,9 @@ ofp_condition_admin_blueprint.add_url_rule(
     ),
 )
 
+def url_for_ofp_condition_after_success(action, instance):
+    return url_for('.list', _anchor=str(instance.id))
+
 ofp_condition_admin_blueprint.add_url_rule(
     rule = '/ofp-condition/<uuid:id>',
     view_func = EditObjectView.as_view(
@@ -201,9 +218,10 @@ ofp_condition_admin_blueprint.add_url_rule(
         model = OFPCondition,
         # Special template and context for displaying the results of the
         # OFPCondition query.
-        template = 'admin/form_ofp_condition.html',
-        form_class = EditOFPConditionForm,
+        template = 'admin/form.html',
+        form_class = OFPConditionForm,
         extra_context = preview_ofp_condition_context,
+        success_url_factory = url_for_ofp_condition_after_success,
     ),
 )
 
@@ -218,80 +236,97 @@ job_template_forms = {
     JobTypeEnum.MOVE_FILE.name: MoveFileJobTemplateForm,
 }
 
+job_template_admin_blueprint.add_url_rule(
+    rule = '/job-template',
+    view_func = ListView.as_view(
+        name = 'list',
+        query_form_manager = QueryFormManager(model=JobTemplate),
+        template = 'admin/table.html',
+        edit_endpoint = '.edit',
+        description = JobTemplate.__ui_description__,
+        table = Table(
+            columns = [
+                TableColumn('Name', 'name'),
+                TableColumn('Job Type', 'job_type_name'),
+                TableColumn('OFP Condition', 'ofp_condition.blurb'),
+                TableColumn('Position', 'execution_position'),
+            ],
+        ),
+    ),
+)
+
+job_template_admin_blueprint.add_url_rule(
+    rule = '/job-template/new',
+    view_func = CreateObjectView.as_view(
+        name = 'create',
+        rule = '/job-template/new',
+        model = JobTemplate,
+        form_class = EmailFromTemplateJobTemplateForm,
+        template = 'admin/form.html',
+    )
+)
+
 def job_template_form_for_instance(job_template):
     # Select proper form for job_type name.
     if job_template.job_type_name in job_template_forms:
         return job_template_forms[job_template.job_type_name]
 
-add_url_rule_for_table_listing(
-    job_template_admin_blueprint,
-    rule = '/job-template',
-    query_form_manager = QueryFormManager(model=JobTemplate),
-    template = 'admin/table.html',
-    edit_endpoint = '.edit',
-    table = Table(
-        model = JobTemplate,
-        columns = [
-            TableColumn('Name', 'name'),
-            TableColumn('Job Type', 'job_type_name'),
-            TableColumn('OFP Condition', 'ofp_condition.blurb'),
-            TableColumn('Position', 'execution_position'),
-        ],
-    ),
-)
-
-add_url_rule_for_creating(
-    job_template_admin_blueprint,
-    rule = '/job-template/new',
-    model = JobTemplate,
-    form_class = EmailFromTemplateJobTemplateForm,
-    template = 'admin/form.html',
-)
-
-add_url_rule_for_editing(
-    job_template_admin_blueprint,
+job_template_admin_blueprint.add_url_rule(
     rule = '/job-template/<uuid:id>',
-    form_class_factory = job_template_form_for_instance,
-    model = JobTemplate,
-    template = 'admin/form.html',
+    view_func = EditObjectView.as_view(
+        name = 'edit',
+        model = JobTemplate,
+        form_class_factory = job_template_form_for_instance,
+        template = 'admin/form.html',
+    )
 )
 
 job_admin_blueprint = Blueprint('job', __name__)
+admin_bp.register_blueprint(job_admin_blueprint)
 
-add_url_rule_for_table_listing(
-    job_admin_blueprint,
+job_admin_blueprint.add_url_rule(
     rule = '/job',
-    #pagination_factory = lambda: db.paginate(db.select(Job)),
-    query_form_manager = QueryFormManager(model=Job),
-    template = 'admin/table.html',
-    table = Table(
-        model = Job,
-        columns = [
-            TableColumn('Name', 'name'),
-            TableColumn('Type', 'job_type.name'),
-            TableColumn('OFP Condition', 'ofp_condition.blurb'),
-        ],
+    view_func = ListView.as_view(
+        'list',
+        query_form_manager = QueryFormManager(
+            model = Job,
+        ),
+        template = 'admin/table.html',
+        table = Table(
+            columns = [
+                TableColumn('Type', 'job_template.job_type'),
+                TableColumn('OFP Condition', 'job_template.ofp_condition.blurb'),
+            ],
+        ),
     ),
 )
 
-add_url_rule_for_creating(
-    job_admin_blueprint,
+job_admin_blueprint.add_url_rule(
     rule = '/job/new',
-    model = Job,
-    form_class = JobTemplateForm,
-    template = 'admin/form.html',
+    view_func = CreateObjectView.as_view(
+        'create',
+        job_admin_blueprint,
+        model = Job,
+        form_class = JobForm,
+        template = 'admin/form.html',
+    )
 )
 
-add_url_rule_for_editing(
-    job_admin_blueprint,
+job_admin_blueprint.add_url_rule(
     rule = '/job/<uuid:id>',
-    form_class = JobTemplateForm,
-    model = Job,
-    template = 'admin/form.html',
+    view_func = EditObjectView.as_view(
+        name = 'edit',
+        form_class = JobForm,
+        model = Job,
+        template = 'admin/form.html',
+    )
 )
 
 ofp_file_admin_blueprint = Blueprint('ofp_file', __name__)
 admin_bp.register_blueprint(ofp_file_admin_blueprint)
+
+def mdy_format(flight_origin_date):
+    return flight_origin_date.strftime('%d%b%y')
 
 ofp_files_query_form_manager = QueryFormManager(
     model = OFPFile,
@@ -299,35 +334,36 @@ ofp_files_query_form_manager = QueryFormManager(
     sort_form_class = OFPFileSortForm,
 )
 
-def mdy_format(flight_origin_date):
-    return flight_origin_date.strftime('%d%b%y')
-
-add_url_rule_for_table_listing(
-    ofp_file_admin_blueprint,
-    '/ofp-file',
-    template = 'admin/table_with_filter.html',
-    query_form_manager = ofp_files_query_form_manager,
-    edit_endpoint = 'job_template.list_matching_job_templates',
-    table = Table(
-        model = OFPFile,
-        columns = [
-            # Showing the same fields we can filter by.
-            TableColumn('Airline', 'airline_iata_code'),
-            TableColumn('Flight', 'flight_number'),
-            TableColumn('Date', 'flight_origin_date', cast=mdy_format),
-            TableColumn('Orig.', 'origin_iata'),
-            TableColumn('Dest.', 'destination_iata'),
-            TableColumn('Path', 'display_path'),
-        ],
-    ),
+ofp_file_admin_blueprint.add_url_rule(
+    rule = '/ofp-file',
+    view_func = ListView.as_view(
+        name = 'list',
+        template = 'admin/table_with_filter.html',
+        query_form_manager = ofp_files_query_form_manager,
+        # views/job_template.py:list_matching_job_templates
+        edit_endpoint = 'job_template.list_matching_job_templates',
+        table = Table(
+            columns = [
+                # Showing the same fields we can filter by.
+                TableColumn('Airline', 'airline_iata_code'),
+                TableColumn('Flight', 'flight_number'),
+                TableColumn('Date', 'flight_origin_date', cast=mdy_format),
+                TableColumn('Orig.', 'origin_iata'),
+                TableColumn('Dest.', 'destination_iata'),
+                TableColumn('Path', 'display_path'),
+            ],
+        ),
+    )
 )
 
-add_url_rule_for_editing(
-    ofp_file_admin_blueprint,
+ofp_file_admin_blueprint.add_url_rule(
     rule = '/ofp-file/<uuid:id>',
-    form_class = JobTemplateForm,
-    model = Job,
-    template = 'admin/form.html',
+    view_func = EditObjectView.as_view(
+        name = 'edit',
+        form_class = JobForm, # TODO: need a form?
+        model = Job,
+        template = 'admin/form.html',
+    )
 )
 
 job_type_blueprint = Blueprint('job_type', __name__)
@@ -337,10 +373,8 @@ add_url_rule_for_table_listing(
     job_type_blueprint,
     rule = '/job-types',
     template = 'admin/table.html',
-    #pagination_factory = lambda: db.paginate(db.select(JobType)),
     query_form_manager = QueryFormManager(model=JobType),
     table = Table(
-        model = JobType,
         columns = [
             TableColumn('Name', 'name'),
         ],
@@ -363,6 +397,48 @@ add_url_rule_for_creating(
     template = 'admin/form.html',
 )
 
+send_to_template_blueprint = Blueprint('send_to_template', __name__)
+admin_bp.register_blueprint(send_to_template_blueprint)
+
+send_to_template_blueprint.add_url_rule(
+    rule = '/send-to',
+    view_func = ListView.as_view(
+        name = 'list',
+        query_form_manager = QueryFormManager(
+            model = SendToTemplate,
+        ),
+        description = SendToTemplate.__ui_description__,
+        edit_endpoint = 'admin.send_to_template.edit',
+        create_endpoint = 'admin.send_to_template.create',
+        template = 'admin/table.html',
+        table = Table(
+            columns = [
+                TableColumn('OFP Condition', 'ofp_condition_as_html'),
+                TableColumn('Email', 'email.address'),
+            ],
+        ),
+    ),
+)
+
+send_to_template_blueprint.add_url_rule(
+    rule = '/send-to/<uuid:id>',
+    view_func = EditObjectView.as_view(
+        name = 'edit',
+        form_class = EditSendToForm,
+        model = SendToTemplate,
+        template = 'admin/form.html',
+    ),
+)
+
+send_to_template_blueprint.add_url_rule(
+    rule = '/send-to/new',
+    view_func = CreateObjectView.as_view(
+        name = 'create',
+        form_class = EditSendToForm,
+        template = 'admin/form.html',
+    )
+)
+
 email_from_template_job_template_blueprint = Blueprint('email_from_template_job_template', __name__)
 admin_bp.register_blueprint(email_from_template_job_template_blueprint)
 
@@ -376,10 +452,9 @@ email_from_template_job_template_blueprint.add_url_rule(
         ),
         template = 'admin/table.html',
         table = Table(
-            model = EmailFromTemplateJobTemplate,
             columns = [
                 TableColumn('Name', 'name'),
-                TableColumn('OFP Condition', 'ofp_condition'),
+                TableColumn('OFP Condition', 'ofp_condition.condition_as_html'),
                 TableColumn('Recipients', 'send_tos_html_list'),
             ],
         ),
@@ -396,20 +471,104 @@ email_from_template_job_template_blueprint.add_url_rule(
     ),
 )
 
+links = [
+    {
+        'endpoint': 'admin.users.list',
+        'text': 'Users',
+        'current_for': set([
+            'admin.users.list',
+            'admin.users.edit',
+            'admin.users.new',
+        ]),
+    },
+    # Job objects are a poor admin objects. These are basically the work that
+    # was done.
+    #{
+    #    'endpoint': 'admin.job.list',
+    #    'text': 'Job',
+    #    'current_for': set([
+    #        'admin.job.list',
+    #        'admin.job.edit',
+    #        'admin.job.new',
+    #    ]),
+    #},
+    {
+        'endpoint': 'admin.job_template.list',
+        'text': 'Job Template',
+        'current_for': set([
+            'admin.job_template.list',
+            'admin.job_template.edit',
+            'admin.job_template.new',
+        ]),
+    },
+    {
+        'endpoint': 'admin.emails.list',
+        'text': 'Emails',
+        'current_for': set([
+            'admin.emails.list',
+            'admin.emails.edit',
+            'admin.emails.new',
+        ]),
+    },
+    {
+        'endpoint': 'admin.email_from_template_job_template.list',
+        'text': Markup('Email From Template Job Template'),
+        'current_for': set([
+            'admin.email_from_template_job_template.list',
+            'admin.email_from_template_job_template.edit',
+            'admin.email_from_template_job_template.new',
+        ]),
+    },
+    {
+        'endpoint': 'admin.send_to_template.list',
+        'text': 'Send To Template',
+        'current_for': set([
+            'admin.send_to_template.list',
+            'admin.send_to_template.edit',
+            'admin.send_to_template.new',
+        ]),
+    },
+    {
+        'endpoint': 'admin.ofp_condition.list',
+        'text': 'OFPCondition',
+        'current_for': set([
+            'admin.ofp_condition.list',
+            'admin.ofp_condition.edit',
+            'admin.ofp_condition.new',
+        ]),
+    },
+    {
+        'endpoint': 'admin.job_type.list',
+        'text': 'JobType',
+        'current_for': set([
+            'admin.job_type.list',
+            'admin.job_type.edit',
+            'admin.job_type.new',
+        ])
+    },
+    {
+        'endpoint': 'admin.job_template.list',
+        'text': 'JobTemplate',
+        'current_for': set([
+            'admin.job_template.list',
+            'admin.job_template.edit',
+            'admin.job_template.new',
+        ]),
+    },
+    {
+        'endpoint': 'admin.ofp_file.list',
+        'text': 'OFPFile',
+        'current_for': set([
+            'admin.ofp_file.list',
+            'admin.ofp_file.edit',
+            'admin.ofp_file.new',
+        ]),
+    },
+]
+
 @admin_bp.context_processor
 def add_links_to_context():
-    links = [
-        ('admin.users.list', 'Users',),
-        ('admin.emails.list', 'Emails',),
-        (
-            'admin.email_from_template_job_template.list',
-            Markup('Email From Template Job Template'),
-        ),
-        ('admin.ofp_condition.list', 'OFPCondition',),
-        ('admin.job_type.list', 'JobType',),
-        ('admin.job_template.list', 'JobTemplate',),
-        ('admin.ofp_file.list', 'OFPFile',),
-    ]
+    # Add links to all admin endpoints
     return {
         'links': links,
     }
@@ -420,94 +579,3 @@ def root():
     List of links to database objects' admin pages.
     """
     return render_template('admin/base.html')
-
-# Map models to forms
-MODEL_FORM_MAP = {
-    User: UserForm,
-    Email: EmailForm,
-    OFPCondition: OFPConditionForm,
-}
-
-MODELNAME_CLASS_MAP = {
-    'User': User,
-    'Email': Email,
-    'OFPCondition': OFPCondition,
-}
-
-def prompt_for_form(form_class, formdata=None):
-    """
-    Prompt user for each field in a WTForms form, returning a populated form.
-    """
-    if formdata is None:
-        formdata = {}
-    form = form_class()
-    for name, field in form._fields.items():
-        # skip submit/delete buttons
-        if field.type in ('SubmitField',):
-            continue
-
-        # Skip already given keys
-        if name in formdata:
-            continue
-
-        # prompt textually
-        prompt_text = f"{name} ({field.label.text})"
-        default = getattr(field, 'default', None)
-
-        if field.type.endswith('List'):
-            value = []
-            while True:
-                item = click.prompt(prompt_text, default='', show_default=False)
-                if not item:
-                    break
-                value.append(item)
-        else:
-            value = click.prompt(prompt_text, default=default, show_default=True)
-        formdata[name] = value
-
-    # create form instance with the collected data
-    return form_class(data=formdata)
-
-
-@admin_bp.cli.command('create')
-@click.argument(
-    'model_name',
-    type = click.Choice(key.__name__ for key in MODEL_FORM_MAP),
-)
-@click.option(
-    '--field',
-    '-f',
-    multiple = True,
-    nargs = 2,
-    type = str,
-)
-def create_object(model_name, field):
-    """
-    Create an object of MODEL_NAME using its form.
-    Example: flask seed create User
-    """
-    # find model + form
-    model = MODELNAME_CLASS_MAP[model_name]
-    form_class = MODEL_FORM_MAP[model]
-
-    data = dict(field)
-
-    # prompt user for values
-    form = prompt_for_form(form_class, data)
-
-    # validate
-    if not form.validate():
-        click.echo("Validation failed!")
-        for field, errors in form.errors.items():
-            for e in errors:
-                click.echo(f"  {field}: {e}")
-        return
-
-    # create instance
-    instance = model()
-    form.populate_obj(instance)
-
-    # add and commit
-    db.session.add(instance)
-    db.session.commit()
-    click.echo(f"{model_name} created with id={instance.id}")

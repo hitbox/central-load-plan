@@ -2,15 +2,21 @@ import argparse
 import os
 import xml.etree.ElementTree as ET
 
+from datetime import datetime
+from datetime import timezone
 from pprint import pprint
 from zoneinfo import ZoneInfo
 
-from .models import AircraftEquipmentStatusDescription
-from .constants import flight_plan_namespaces
+from central_load_plan.models import AircraftEquipmentStatusDescription
+from central_load_plan.constants import flight_plan_namespaces
+
 from .xml_parser import NestedXMLField
 from .xml_parser import Parser
 from .xml_parser import XMLField
-from central_load_plan.parsers.expiration_datetime import make_expiration_datetime_from_raw_text_parser
+from .expiration_datetime import make_expiration_datetime_from_raw_text_parser
+
+def utcfromtimestamp(timestamp):
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
 class FlightPlanXMLField(XMLField):
     """
@@ -76,6 +82,7 @@ class AircraftEquipmentStatusDescriptionField(NestedFlightPlanXMLField):
     Nested XML schema rooted at a <Title> element.
     """
 
+    # Text of xml.
     raw_text = FlightPlanXMLField(
         '.',
         raise_for_exists = False, # allow not found
@@ -112,6 +119,7 @@ class AircraftEquipmentStatusField(NestedFlightPlanXMLField):
         '.',
     )
 
+    # A long description of a MELCDLItem from <Title>.
     description_object = AircraftEquipmentStatusDescriptionField(
         xpath = './ns:Title',
         raise_for_exists = False, # Title is some times missing.
@@ -145,6 +153,9 @@ class AirlineXMLField(NestedFlightPlanXMLField):
 
 
 class FlightPlanParser(Parser):
+    """
+    Parse OFP XML.
+    """
 
     flight_plan_id = FlightPlanXMLField('.', attr='flightPlanId')
 
@@ -375,10 +386,13 @@ class FlightPlanParser(Parser):
     )
 
     def parse_path(self, path):
+        """
+        Add file metadata from path to data dict.
+        """
         data = super().parse_path(path)
         data.update({
             'size': os.path.getsize(path),
-            'mtime': os.path.getmtime(path),
+            'mtime': utcfromtimestamp(os.path.getmtime(path)),
         })
         return data
 

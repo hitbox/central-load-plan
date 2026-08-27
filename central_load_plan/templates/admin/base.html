@@ -4,9 +4,10 @@
 {% block main %}
     {{ super() }}
     <nav>
-        <ul>{% for endpoint, text in links %}
-            <li>
-                <a class="admin-link" href="{{ url_for(endpoint) }}">{{ text }}</a>
+        <ul>{% for link in links %}
+            <li class="admin-link">
+                {% set is_current = request.endpoint in link.current_for %}
+                <a href="{{ url_for(link.endpoint) }}"{% if is_current %} aria-current=page{% endif %}>{{ link.text }}</a>
             </li>
         {% endfor %}</ul>
     </nav>

@@ -71,18 +71,6 @@ class JobTemplateForm(FlaskForm):
 
     template_name = StringField()
 
-    min_size = IntegerField(
-        render_kw = {
-            'title': JobTemplate.min_size.property.columns[0].comment,
-        },
-    )
-
-    min_age = IntegerField(
-        render_kw = {
-            'title': JobTemplate.min_age.property.columns[0].comment,
-        },
-    )
-
     execution_position = IntegerField(
         render_kw = {
             'title': JobTemplate.execution_position.property.columns[0].comment,

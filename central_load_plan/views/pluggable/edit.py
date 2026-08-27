@@ -23,7 +23,14 @@ class EditObjectView(View):
         form_class_factory = None,
         form_class = None,
         extra_context = None,
+        success_url_factory = None,
     ):
+        """
+        :param success_url_factory:
+            callable taking (action_name, instance) where action_name is
+            "delete" or "update" and instance is the database instance the
+            action was performed on.
+        """
         if not (form_class_factory or form_class):
             raise ValueError(
                 'Either form_class_factory or form_class keyword'
@@ -38,6 +45,16 @@ class EditObjectView(View):
         self.form_class_factory = form_class_factory
         self.form_class = form_class
         self.extra_context = extra_context
+        self._success_url_factory = success_url_factory
+
+    @property
+    def success_url_factory(self):
+        if self._success_url_factory:
+            success_url_factory = self._success_url_factory
+        else:
+            def success_url_factory(action, instance):
+                return url_for(request.endpoint, **request.view_args)
+        return success_url_factory
 
     def dispatch_request(self, **ident):
         instance = db.session.get(self.model, ident)
@@ -59,11 +76,11 @@ class EditObjectView(View):
             if 'delete' in request.form:
                 db.session.delete(instance)
                 flash('Object deleted', 'success')
-                url = url_for('.list')
+                url = self.success_url_factory('delete', instance)
             else:
                 form.populate_obj(instance)
                 flash('Object updated', 'success')
-                url = url_for(request.endpoint, **request.view_args)
+                url = self.success_url_factory('update', instance)
 
             db.session.commit()
             return redirect(url)

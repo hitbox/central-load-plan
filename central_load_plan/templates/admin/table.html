@@ -9,6 +9,7 @@
     {% if model is defined %}
     <h3>{{ model.__name__ }} objects</h3>
     {% endif %}
+    {% if description is defined %}{{ description }}{% endif %}
     <table class="striped">
         <thead>
             <tr>{% for column in table.columns %}
@@ -17,11 +18,16 @@
         </thead>
         <tbody>
             {% if not pagination.items %}
-                <tr><td colspan="{{ table.columns|length }}">No {% if model is defined %} {{ model.__name__ }}{% endif %} objects</td></tr>
+                {# no results #}
+            <tr>
+                <td colspan="{{ table.columns|length }}">No {% if model is defined %} {{ model.__name__ }}{% endif %} objects</td>
+            </tr>
             {% else %}
-                {% for instance in pagination %}<tr{% if edit_endpoint is defined %} data-href="{{ url_for(edit_endpoint, id=instance.id) }}"{% endif %}>
-                {% for column in table.columns %}<td>{{ column.valueof(instance) }}</td>{% endfor %}
-            </tr>{% endfor %}
+                {# render page of table rows #}
+                {% for instance in pagination %}
+                <tr id="{{ instance.id }}"{% if edit_endpoint is defined %} data-href="{{ url_for(edit_endpoint, id=instance.id) }}"{% endif %}>
+                    {% for column in table.columns %}<td>{{ column.valueof(instance) }}</td>{% endfor %}
+                </tr>{% endfor %}
             {% endif %}
             {% if create_endpoint is defined %}
             <tr>
@@ -30,7 +36,7 @@
             {% endif %}
         </tbody>
     </table>
-    <div class=pagination>{% for page in pagination.iter_pages() %}
+    <nav class="pagination">{% for page in pagination.iter_pages() %}
         {% if page %}
             {% if page != pagination.page %}
                  <a href="{{ url_for(request.endpoint, page=page) }}">{{ page }}</a>
@@ -40,5 +46,5 @@
         {% else %}
             <span class=ellipsis>…</span>
         {% endif %}
-    {% endfor %}</div>
+    {% endfor %}</nav>
 {% endblock main %}

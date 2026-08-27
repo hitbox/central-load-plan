@@ -1,4 +1,5 @@
 from flask import Flask
+from flask import flash
 from flask import redirect
 from flask import render_template
 from flask import url_for
@@ -32,6 +33,19 @@ def create_app():
         Redirect to admin root for app root.
         """
         return redirect(url_for('admin.root'))
+
+    if app.debug:
+        @app.route('/flash')
+        def flash_messages():
+            """
+            Show all flash categories as messages.
+            """
+            flash('Success message', 'success')
+            flash('Error message', 'error')
+            flash('Warning message', 'warning')
+            flash('Info message', 'info')
+            return redirect(url_for('admin.root'))
+
 
     @app.cli.command('create-db')
     def create_db():

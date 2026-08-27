@@ -340,11 +340,14 @@ class AirlineSchema(SQLAlchemyAutoSchema):
 
 
 class OperationalFlightPlanSchema(SQLAlchemyAutoSchema):
+    # AKA: OFPFileSchema ----^
 
     class Meta:
         model = OFPFile
         load_instance = True
         sqla_session = db.session
+    # Only need to specify overriding conversions or extra. Most are taken from
+    # the model.
 
     airline_object = Nested(AirlineSchema)
 
@@ -397,3 +400,6 @@ class OperationalFlightPlanSchema(SQLAlchemyAutoSchema):
             self._cache[registration_number] = instance
 
         return instance
+
+# TODO: rename
+OFPFileSchema = OperationalFlightPlanSchema

@@ -2,6 +2,15 @@ from flask_wtf import FlaskForm
 from markupsafe import Markup
 from markupsafe import escape
 
+def render_errors_list(error):
+    html = []
+    html.append(f'<ul id="{escape(field.id)}-helper" class="errors">')
+    for error in field.errors:
+        error = escape(error)
+        html.append(f'<li>{error}</li>')
+    html.append('</ul>')
+    return html
+
 def render_field_picocss(field, **kwargs):
     html = [
         f'<label for="{escape(field.id)}">{escape(field.label.text)}',
@@ -22,10 +31,7 @@ def render_field_picocss(field, **kwargs):
     html.append(str(field(**kwargs)))
 
     if field.errors:
-        html.append(f'<ul id="{escape(field.id)}-helper" class="errors">')
-        for error in field.errors:
-            html.append(f'<li>{escape(error)}</li>')
-        html.append('</ul>')
+        html.extend(render_errors_list(field.errors))
 
     return Markup(''.join(html))
 

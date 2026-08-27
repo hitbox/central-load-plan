@@ -1,3 +1,4 @@
+alembic
 concurrent-log-handler
 flask
 flask-login

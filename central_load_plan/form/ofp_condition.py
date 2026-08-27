@@ -29,85 +29,27 @@ def validate_values_for_operator(form, values_field):
         if len(values_field.data) > 1:
             raise ValidationError(f'Only only value for {form.operator.data} allowed')
 
-class OFPConditionValueFormField(Form):
+class OFPConditionValueFieldForm(Form):
 
     value = StringField(validators=[DataRequired()])
 
 
-class EditOFPConditionForm(FlaskForm):
+def ofp_key_select_field(**kwargs):
+    kwargs.setdefault('choices', OFPCondition.valid_ofp_key_values())
+    return SelectField(**kwargs)
 
-    name = StringField()
+def operator_select_field(**kwargs):
+    default_choices = [(key, val.title()) for key, val in OFPCondition.__operators_choices__]
+    kwargs.setdefault('choices', default_choices)
+    validators = kwargs.setdefault('validators', [DataRequired()])
+    return SelectField(**kwargs)
 
-    blurb = StringField()
-
-    def is_ofp_key(form, field):
-        """
-        Validate ofp_key is an attribute of OFPFile for submit/update.
-        """
-        if not form.delete.data:
-            mapper = sa.inspect(OFPFile)
-            if field.data not in mapper.columns.keys():
-                raise ValidationError(f'{field.data} is not a column of OFPFile')
-
-    ofp_key = SelectField(
-        choices = [
-            'flight_number',
-            'flight_identifier_first_three',
-            'flight_identifier',
-            'airline_iata_code',
-            'origin_iata',
-            'origin_icao',
-            'destination_iata',
-            'destination_icao',
-            'aircraft_registration_number',
-            'estimated_block_time',
-            'estimated_time_enroute',
-            'scheduled_departure_time',
-            'estimated_time_enroute',
-            # ...(many others)...
-            'original_path',
-            'size',
-            'mtime',
-            'mtime_dt',
-            'mtime_age',
-            'archive_path',
-            'leg_departure_date_utc',
-            'flight_origin_date',
-            'version_number',
-        ]
-    )
-
-    __human_operator__ = {
-        'eq': 'Equals',
-        'ne': 'Not Equal',
-        'lt': 'Less Than',
-        'le': 'Less Than or Equal',
-        'gt': 'Greater Than',
-        'ge': 'Greater Than or Equal',
-        'contains': 'One Of',
-        'ilike': 'Case Insensitive Search',
-    }
-
-    operator = SelectField(
-        choices = OFPCondition.__operators_choices__,
-        validators=[
-            DataRequired(),
-        ],
-    )
-
-    values = FieldList(
-        FormField(
-            OFPConditionValueFormField
-        ),
-        min_entries=1,
-        widget = DynamicListWidget(),
-        validators = [validate_values_for_operator],
-    )
-
-    submit = SubmitField('Update')
-
-    delete = SubmitField('Delete')
-
+def values_field_list(**kwargs):
+    kwargs.setdefault('unbound_field', FormField(OFPConditionValueFieldForm))
+    kwargs.setdefault('min_entries', 1)
+    kwargs.setdefault('widget', DynamicListWidget())
+    validators = kwargs.setdefault('validators', [validate_values_for_operator])
+    return FieldList(**kwargs)
 
 class OFPConditionForm(Form):
 
@@ -115,64 +57,18 @@ class OFPConditionForm(Form):
 
     blurb = StringField()
 
-    def is_ofp_key(form, field):
-        """
-        Validate ofp_key is an attribute of OFPFile for submit/update.
-        """
-        if not form.delete.data:
-            mapper = sa.inspect(OFPFile)
-            if field.data not in mapper.columns.keys():
-                raise ValidationError(f'{field.data} is not a column of OFPFile')
+    ofp_key = ofp_key_select_field()
 
-    ofp_key = SelectField()
+    operator = operator_select_field()
 
-    __human_operator__ = {
-        'eq': 'Equals',
-        'ne': 'Not Equal',
-        'lt': 'Less Than',
-        'le': 'Less Than or Equal',
-        'gt': 'Greater Than',
-        'ge': 'Greater Than or Equal',
-        'contains': 'One Of',
-        'ilike': 'Case Insensitive Search',
-    }
-
-    operator = SelectField(validators=[DataRequired()])
-
-    values = FieldList(
-        FormField(
-            OFPConditionValueFormField
-        ),
-        min_entries=1,
-        widget = DynamicListWidget(),
-        validators = [validate_values_for_operator],
-    )
+    values = values_field_list()
 
     submit = SubmitField('Update')
 
     delete = SubmitField('Delete')
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if 'obj' in kwargs:
-            # Editing existing obj
-            obj = kwargs['obj']
-        else:
-            # Require unique name for new
-            validators = list(self.name.validators)
-            validators.append(ofp_condition_name_is_unique)
-            self.name.validators = tuple(validators)
-
-        # Dynamic choices
-        self.operator.choices = [
-            (key, self.__human_operator__[key])
-            for key in OFPCondition.__valid_operators__
-        ]
-        mapper = sa.inspect(OFPFile)
-        self.ofp_key.choices = [(c.name, c.name) for c in mapper.columns]
-
     def populate_obj(self, obj):
-        # normal fields
+        # populate from normal fields
         for field_name in ['name', 'ofp_key', 'operator']:
             if hasattr(self, field_name):
                 setattr(obj, field_name, getattr(self, field_name).data)
@@ -180,7 +76,7 @@ class OFPConditionForm(Form):
         # nested FieldList -> OFPConditionValue
         if hasattr(self, 'values'):
             # Clear existing related objects
-            obj.values[:] = []
+            obj.values.clear()
 
             for i, value_form in enumerate(self.values):
                 # Either update existing object if editing or create new

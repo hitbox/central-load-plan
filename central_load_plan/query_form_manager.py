@@ -71,6 +71,10 @@ class QueryFormManager:
         return query
 
     def get_pagination(self):
-        query = db.select(self.model)
+        if hasattr(self.model, 'select_factory'):
+            query = self.model.select_factory()
+        else:
+            # generic query for models
+            query = db.select(self.model)
         query = self.apply_forms_to_query(query)
         return (db.paginate(query), query)

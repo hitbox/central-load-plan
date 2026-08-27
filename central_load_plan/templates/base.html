@@ -1,41 +1,41 @@
 <!doctype html>
 <html translate="no">{% set title = 'Central Load Plan' %}
+    {% set project_description = 'Background tasks watch for new OFP XML files and generate output (like emails) according to conditions. This web app is an admin interface.' %}
     <head>{% block head %}
         <title>{{ title }}</title>
         <meta name=google content=notranslate>
         <meta name=viewport content="width=device-width, initial-scale=1.0">
         <link rel="icon" href="data:,">
-        <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
         <link rel="stylesheet" href="{{ url_for('static', filename='pico.orange.min.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
         <script src="{{ url_for('static', filename='site.js') }}"></script>
     {% endblock %}</head>
     <body>{% block body %}
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="flashes-container">
-                    <ul class="flashes">{% for category, message in messages %}
-                        <li class="flash flash-{{ category }}">{{ message }}</li>
-                    {% endfor %}</ul>
+                <div class="flashes-container container">
+                    {% for category, message in messages %}
+                        <article class="flash flash-{{ category }}">{{ message }}</article>
+                    {% endfor %}
                 </div>
             {% endif %}
         {% endwith %}
-        <div id=main-container>
-            <main class="container">
-                <nav>
-                    <ul>
-                        <li><strong>{{ title }}</strong></li>
-                    </ul>
-                    <ul>
-                        {% if current_user.is_authenticated %}
-                            <li><a role="button" href="{{ url_for('user.logout') }}">Logout</a></li>
-                            {% if current_user.is_admin %}
-                                <li><a role="button" href="{{ url_for('admin.root') }}">Admin</a></li>
-                            {% endif %}
+        <main class="container">
+            <nav>
+                <ul>
+                    <li><h2>{{ title }}</h2></li>
+                </ul>
+                <ul>
+                    {% if current_user.is_authenticated %}
+                        <li><a role="button" href="{{ url_for('user.logout') }}">Logout</a></li>
+                        {% if current_user.is_admin %}
+                            <li><a role="button" href="{{ url_for('admin.root') }}">Admin</a></li>
                         {% endif %}
-                    </ul>
-                </nav>
-                {% block main %}{% endblock main %}
-            </main>
-        </div>
+                    {% endif %}
+                </ul>
+            </nav>
+            <p>{{ project_description }}</p>
+            {% block main %}{% endblock main %}
+        </main>
     {% endblock body %}</body>
 </html>

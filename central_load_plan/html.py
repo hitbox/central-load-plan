@@ -8,23 +8,23 @@ class TableColumn:
     Given an instance of a model provide header and value text for html.
     """
 
-    def __init__(self, header, attr, cast=None):
+    def __init__(self, header, attr=None, cast=None):
         self.header = header
         self.attr = attr
         self.cast = cast
 
     def valueof(self, instance):
-        value = deep_getattr(instance, self.attr)
-        if self.cast:
-            value = self.cast(value)
-        return value
+        if self.attr:
+            value = deep_getattr(instance, self.attr)
+            if self.cast:
+                value = self.cast(value)
+            return value
 
 
 class Table:
 
-    def __init__(self, columns, model, row_endpoint=None):
+    def __init__(self, columns, row_endpoint=None):
         self.columns = columns
-        self.model = model
         self.row_endpoint = row_endpoint
 
     def get_pk_dict(self, instance):

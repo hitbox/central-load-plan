@@ -4,10 +4,17 @@ from wtforms import FormField
 from wtforms import PasswordField
 from wtforms import StringField
 from wtforms import SubmitField
+from wtforms_sqlalchemy.fields import QuerySelectField
+
+from central_load_plan.models import OFPCondition
+from central_load_plan.extension import db
 
 from .job_template import SendToTemplateAddressForm
 from .job_template import render_field_list
-from .ofp_condition import EditOFPConditionForm
+from .ofp_condition import OFPConditionForm
+
+def ofp_conditions():
+    return db.session.scalars(db.select(OFPCondition)).all()
 
 class EditEmailFromTemplateJobTemplateForm(FlaskForm):
     """
@@ -17,7 +24,12 @@ class EditEmailFromTemplateJobTemplateForm(FlaskForm):
     name = StringField()
 
     ofp_condition = FormField(
-        EditOFPConditionForm,
+        OFPConditionForm,
+    )
+
+    ofp_condition = QuerySelectField(
+        query_factory = ofp_conditions,
+        get_label = 'name',
     )
 
     # TODO

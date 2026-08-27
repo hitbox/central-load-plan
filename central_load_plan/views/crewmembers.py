@@ -22,7 +22,6 @@ from central_load_plan.constants import AIRLINE_CODES
 from central_load_plan.engine import get_lsyrept_engine
 from central_load_plan.extension import db
 from central_load_plan.extension import login_manager
-from central_load_plan.flight_plan_parser import FlightPlanParser
 from central_load_plan.form import CrewmemberArgsForm
 from central_load_plan.form import EFFArchiveFilterForm
 from central_load_plan.models import ChainItemDaily
@@ -33,6 +32,7 @@ from central_load_plan.models import NonCrewMember
 from central_load_plan.models import OFPFile
 from central_load_plan.models import RemarkOfEvent
 from central_load_plan.models.lsyrept import crew_members_from_ofp
+from central_load_plan.parsers import FlightPlanParser
 from central_load_plan.schema import EFFArchivePathSchema
 from central_load_plan.schema import OperationalFlightPlanSchema
 from central_load_plan.schema import lsyrept_model_schemas

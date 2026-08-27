@@ -73,12 +73,16 @@ def fullv1(status, **textwrap_options):
 
     return description
 
+def template_from_name(name):
+    env = create_template_environment()
+    template = env.get_template(name)
+    return template
+
 def render(template, data, ofp_file):
     """
     Render email body text from airline specific template.
     """
-    env = create_template_environment()
-    template = env.get_template(template)
+    template = template_from_name(template)
     context = dict(
         textwrap = textwrap,
         clean_remove = clean_remove,

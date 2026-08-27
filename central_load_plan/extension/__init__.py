@@ -1,11 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 
-from central_load_plan.models.clp_base import CLPBase
-
 from flask_smtp import SMTP
 
-db = SQLAlchemy(model_class=CLPBase)
+db = SQLAlchemy()
 
 smtp = SMTP()
 

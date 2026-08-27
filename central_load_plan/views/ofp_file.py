@@ -15,10 +15,9 @@ from sqlalchemy.orm import Session
 
 from central_load_plan.engine import get_lsyrept_engine
 from central_load_plan.extension import db
-from central_load_plan.flight_plan_parser import FlightPlanParser
 from central_load_plan.models import OFPFile
-from central_load_plan.models.archive import FolderWalk
 from central_load_plan.models.lsyrept import crew_members_from_ofp
+from central_load_plan.parsers import FlightPlanParser
 from central_load_plan.schema import OperationalFlightPlanSchema
 from central_load_plan.service import build_jobs
 
