@@ -10,10 +10,14 @@ from ..job import JSONOutputJob
 from .polybase import JobTemplate
 
 class JSONOutputJobTemplate(JobTemplate):
+    """
+    Template and condition for writing a json file from an OFPFile object.
+    """
 
     __job_class__ = JSONOutputJob
 
     __tablename__ = 'json_output_template_job_template'
+    __tablename__ = 'job_template_json_output'
 
     __mapper_args__ = {
         'polymorphic_identity': JobTypeEnum.JSON_FILE.name,
@@ -34,6 +38,9 @@ class JSONOutputJobTemplate(JobTemplate):
     output_path = sa.Column(sa.String, nullable=False)
 
     def html_preview(self, ofp_file):
+        """
+        HTML ready string for use in templates.
+        """
         from central_load_plan.schema import OperationalFlightPlanSchema
 
         ofp_data = ofp_file.as_dict_with_crew()
@@ -56,6 +63,7 @@ class JSONOutputJobTemplate(JobTemplate):
     def make_job(self, ofp_file):
         return self.__job_class__(
             ofp_file = ofp_file,
+            ofp_condition = self.ofp_condition,
             name = self.name,
             output_path = self.output_path,
         )

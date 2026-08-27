@@ -5,9 +5,9 @@ import sqlalchemy as sa
 from flask_login import UserMixin
 from passlib.hash import argon2
 
-from .clp_base import CLPBase
+from central_load_plan.extension import db
 
-class User(CLPBase, UserMixin):
+class User(UserMixin, db.Model):
     """
     A user of the web app system controlling login.
     """

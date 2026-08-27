@@ -10,11 +10,12 @@ import sqlalchemy as sa
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import Session
 
-from .clp_base import CLPBase
-
 from central_load_plan.engine import get_lsyrept_engine
+from central_load_plan.extension import db
+from central_load_plan.models.lsyrept import crew_members_from_ofp
+from central_load_plan.parsers import FlightPlanParser
 
-class OFPFile(CLPBase):
+class OFPFile(db.Model):
     """
     OFP XML file scraped for data.
     """
@@ -37,15 +38,10 @@ class OFPFile(CLPBase):
     )
 
     mtime = sa.Column(
-        sa.Integer,
+        sa.DateTime(timezone=True),
         nullable = False,
-        comment = 'os.path.getmtime value',
+        comment = 'os.path.getmtime value as datetime',
     )
-
-    @property
-    def mtime_dt(self):
-        if self.mtime:
-            return datetime.fromtimestamp(self.mtime)
 
     @property
     def mtime_age(self):
@@ -312,7 +308,6 @@ class OFPFile(CLPBase):
         """
         Scrape and deserialize the XML data again, and update this object.
         """
-        from central_load_plan.flight_plan_parser import FlightPlanParser
         from central_load_plan.schema import OperationalFlightPlanSchema
 
         if os.path.isfile(path) and os.path.getsize(path) > 0:
@@ -343,8 +338,6 @@ class OFPFile(CLPBase):
         return {k: getattr(self, k) for k in self.__dict_keys__}
 
     def as_dict_with_crew(self):
-        from central_load_plan.models.lsyrept import crew_members_from_ofp
-
         ofp_data = self.as_dict()
 
         engine = get_lsyrept_engine(self.airline_iata_code)

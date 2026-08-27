@@ -12,10 +12,13 @@ from ..job import MoveFileJob
 from .polybase import JobTemplate
 
 class MoveFileJobTemplate(JobTemplate):
+    """
+    Template for creating Job objects that move a file.
+    """
 
     __job_class__ = MoveFileJob
 
-    __tablename__ = 'move_file_job'
+    __tablename__ = 'job_template_move_file'
 
     __mapper_args__ = {
         'polymorphic_identity': JobTypeEnum.MOVE_FILE.name,

@@ -2,9 +2,9 @@ import uuid
 
 import sqlalchemy as sa
 
-from .clp_base import CLPBase
+from central_load_plan.extension import db
 
-class CrewMember(CLPBase):
+class CrewMember(db.Model):
 
     __tablename__ = 'crew_member'
 

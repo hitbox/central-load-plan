@@ -13,11 +13,15 @@ from central_load_plan import rendering
 from .polybase import JobTemplate
 
 class FileOutputFromTemplateJobTemplate(JobTemplate):
+    """
+    Template and matching condition for rendering file contents from a jinja2
+    template and writing to a file location.
+    """
 
     # tightly related "real" job class
     __job_class__ = FileOutputFromTemplateJob
 
-    __tablename__ = 'file_output_from_template_job_template'
+    __tablename__ = 'job_template_file_output_from_template'
 
     __mapper_args__ = {
         'polymorphic_identity': JobTypeEnum.FILE_FROM_TEMPLATE.name,
@@ -41,8 +45,10 @@ class FileOutputFromTemplateJobTemplate(JobTemplate):
 
     def make_job(self, ofp_file):
         return self.__job_class__(
+            # Job (polybase):
+            job_template = self,
             ofp_file = ofp_file,
-            name = self.name,
+            # FileOutputFromTemplateJob:
             template_name = self.template_name,
             output_path = self.output_path,
         )

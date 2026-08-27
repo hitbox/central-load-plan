@@ -2,11 +2,12 @@ import uuid
 
 import sqlalchemy as sa
 
-from central_load_plan.models.clp_base import CLPBase
+from central_load_plan.extension import db
 
-class SendTo(CLPBase):
+class SendTo(db.Model):
     """
-    Association object linking EmailFromTemplateJob to Email objects.
+    Association object linking EmailFromTemplateJob (render an email from
+    jinja2 template) to one or more Email (address) objects.
     """
 
     __tablename__ = 'send_to'
@@ -15,7 +16,7 @@ class SendTo(CLPBase):
 
     email_from_template_job_id = sa.Column(
         sa.Uuid(as_uuid=True),
-        sa.ForeignKey('email_from_template_job.id'),
+        sa.ForeignKey('job_email_from_template.id'),
     )
 
     email_from_template_job = sa.orm.relationship(
@@ -26,4 +27,5 @@ class SendTo(CLPBase):
 
     email = sa.orm.relationship(
         'Email',
+        back_populates = 'send_tos',
     )

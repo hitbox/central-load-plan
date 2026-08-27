@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class FileOutputFromTemplateJob(Job):
 
-    __tablename__ = 'file_output_from_template_job'
+    __tablename__ = 'job_file_output_from_template'
 
     __mapper_args__ = {
         'polymorphic_identity': JobTypeEnum.FILE_FROM_TEMPLATE.name,

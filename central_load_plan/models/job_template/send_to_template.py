@@ -1,23 +1,45 @@
 import uuid
+import warnings
 
 import sqlalchemy as sa
 
-from central_load_plan.models.clp_base import CLPBase
+from markupsafe import Markup
+
+from central_load_plan.extension import db
 
 from ..job import SendTo
 
-class SendToTemplate(CLPBase):
-
-    __job_class__ = SendTo
+class SendToTemplate(db.Model):
+    """
+    A template describing the email to send to and an optional condition
+    against OFP data. This class is how we get extra, finer per-email control
+    over what emails go out for an OFP condition against, say,
+    EmailFromTemplateJobTemplate objects.
+    """
 
     __tablename__ = 'send_to_template'
+
+    __ui_description__ = Markup("""
+    <h3>SendToTemplate</h3>
+    <p>Defines an email recipient and, optionally, a condition that controls when
+    that recipient receives the email.</p>
+
+    <p>The email template determines when an email is sent. This setting provides
+    additional control over who receives it.</p>
+
+    <p>Without a condition, the recipient always receives the email. With a
+    condition, the recipient receives it only when the condition matches the
+    flight plan.</p>
+    """)
+
+    __job_class__ = SendTo
 
     id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
 
     # Parent EmailFromTemplateJobTemplate
     email_from_template_job_template_id = sa.Column(
         sa.Uuid,
-        sa.ForeignKey('email_from_template_job_template.id'),
+        sa.ForeignKey('job_template_email_from_template.id'),
     )
 
     email_from_template_job_template = sa.orm.relationship(
@@ -31,6 +53,7 @@ class SendToTemplate(CLPBase):
 
     ofp_condition = sa.orm.relationship(
         'OFPCondition',
+        back_populates = 'send_to_templates',
     )
 
     # Email to append to list if OFPCondition is met.
@@ -38,7 +61,34 @@ class SendToTemplate(CLPBase):
 
     email = sa.orm.relationship(
         'Email',
+        back_populates = 'send_to_templates',
     )
 
+    @property
+    def ofp_condition_as_html(self):
+        if self.ofp_condition is None:
+            return 'No condition--always send'
+        else:
+            return self.ofp_condition.condition_as_html
+
+    @property
+    def address_html_with_condtion(self):
+        html = []
+
+        if self.ofp_condition:
+            html.append(f'Send to <address>{self.email.address}</address> for {self.ofp_condition.condition_as_string}')
+        else:
+            html.append(f'Always send to <address>{self.email.address}</address>')
+
+        return Markup(''.join(html))
+
     def make_job(self):
-        return self.__job_class__(email=self.email)
+        warnings.warn(
+            f'{self}.make_job is unexpectedly being called.',
+            RunTimeWarning,
+            stacklevel = 2,
+        )
+        return self.__job_class__(
+            email = self.email,
+            ofp_condition = self.ofp_condition,
+        )

@@ -12,10 +12,11 @@ logger = logging.getLogger(__name__)
 
 class MoveFileJob(Job):
     """
-    Move the originally detected file job.
+    Move the original OFPFile object job. Meant to be an archiving step to
+    avoid duplicate work.
     """
 
-    __tablename__ = 'move_file_job_template'
+    __tablename__ = 'job_move_file'
 
     __mapper_args__ = {
         'polymorphic_identity': JobTypeEnum.MOVE_FILE.name,

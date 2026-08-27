@@ -9,8 +9,11 @@ from html import escape
 import sqlalchemy as sa
 
 from flask import current_app
+from jinja2 import TemplateError
 
 from central_load_plan import rendering
+from central_load_plan.extension import db
+from central_load_plan.rendering import template_from_name
 
 from .job_type import JobTypeEnum
 from .polybase import Job
@@ -18,8 +21,11 @@ from .polybase import Job
 logger = logging.getLogger(__name__)
 
 class EmailFromTemplateJob(Job):
+    """
+    Work to do against an OFP file object, created from a template.
+    """
 
-    __tablename__ = 'email_from_template_job'
+    __tablename__ = 'job_email_from_template'
 
     __mapper_args__ = {
         'polymorphic_identity': JobTypeEnum.EMAIL_FROM_TEMPLATE.name,
@@ -35,6 +41,10 @@ class EmailFromTemplateJob(Job):
     )
 
     template_name = sa.Column(sa.String, nullable=False)
+
+    @db.validates('template_name')
+    def validate_template_name(self, key, value):
+        pass
 
     subject = sa.Column(
         sa.String,

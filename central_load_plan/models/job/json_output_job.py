@@ -11,8 +11,11 @@ from .polybase import Job
 logger = logging.getLogger(__name__)
 
 class JSONOutputJob(Job):
+    """
+    Output json file job from an OFPFile object.
+    """
 
-    __tablename__ = 'json_output_job'
+    __tablename__ = 'job_json_output'
 
     __mapper_args__ = {
         'polymorphic_identity': JobTypeEnum.JSON_FILE.name,

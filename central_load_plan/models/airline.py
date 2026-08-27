@@ -2,9 +2,9 @@ import uuid
 
 import sqlalchemy as sa
 
-from .clp_base import CLPBase
+from central_load_plan.extension import db
 
-class Airline(CLPBase):
+class Airline(db.Model):
     """
     OFP XML file scraped for data.
     """

@@ -2,9 +2,11 @@ import uuid
 
 import sqlalchemy as sa
 
-from .clp_base import CLPBase
+from markupsafe import Markup
 
-class Email(CLPBase):
+from central_load_plan.extension import db
+
+class Email(db.Model):
 
     __tablename__ = 'email'
 
@@ -17,7 +19,11 @@ class Email(CLPBase):
     send_tos = sa.orm.relationship(
         'SendTo',
         back_populates = 'email',
-        cascade = 'all, delete-orphan',
+    )
+
+    send_to_templates = sa.orm.relationship(
+        'SendToTemplate',
+        back_populates = 'email',
     )
 
     def address_for_ofp_data(self, ofp_data):
@@ -25,3 +31,7 @@ class Email(CLPBase):
         Get email address from data scraped from ofp files.
         """
         return self.address.format(**ofp_data)
+
+    @property
+    def as_html(self):
+        return Markup(f'<address>{ self.address }</address>')

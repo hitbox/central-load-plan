@@ -1,14 +1,19 @@
-import uuid
 import operator as py_operator
+import uuid
+
+from operator import attrgetter
 
 import sqlalchemy as sa
 
+from english import english_list
 from flask_login import UserMixin
 from markupsafe import Markup
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.ext.associationproxy import AssociationProxy
 
-from .clp_base import CLPBase
+from central_load_plan.extension import db
+from .mixin import ModelMixin
+
 from .ofp_file import OFPFile
 
 def get_column_type(model, name):
@@ -34,28 +39,12 @@ def get_column_type(model, name):
 
     return None
 
-class OFPCondition(CLPBase):
+class OFPCondition(db.Model):
     """
     Conditional expression to test against parsed and deserialized OFP XML file data.
     """
 
     __tablename__ = 'ofp_condition'
-
-    id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
-
-    name = sa.Column(sa.String, unique=True, nullable=False)
-
-    blurb = sa.Column(
-        sa.String,
-        nullable = True,
-        info = {
-            'help': 'Short description of the purpose of this condition.',
-        },
-    )
-
-    ofp_key = sa.Column(sa.String, nullable=False)
-
-    operator = sa.Column(sa.String)
 
     __operators_choices__ = [
         ('eq', 'equals'),
@@ -90,6 +79,22 @@ class OFPCondition(CLPBase):
         'ilike': 'ilike',
     }
 
+    id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
+
+    name = sa.Column(sa.String, unique=True, nullable=False)
+
+    blurb = sa.Column(
+        sa.String,
+        nullable = True,
+        info = {
+            'help': 'Short description of the purpose of this condition.',
+        },
+    )
+
+    ofp_key = sa.Column(sa.String, nullable=False)
+
+    operator = sa.Column(sa.String)
+
     values = sa.orm.relationship(
         'OFPConditionValue',
         back_populates = 'ofp_conditions',
@@ -102,6 +107,16 @@ class OFPCondition(CLPBase):
         'JobTemplate',
         back_populates = 'ofp_condition',
     )
+
+    send_to_templates = db.orm.relationship(
+        'SendToTemplate',
+        back_populates = 'ofp_condition',
+    )
+
+    @classmethod
+    def valid_ofp_key_values(cls):
+        mapper = sa.inspect(OFPFile)
+        return list(dir(OFPFile))
 
     @sa.orm.validates('ofp_key')
     def validate_ofp_key(self, key, value):
@@ -171,9 +186,20 @@ class OFPCondition(CLPBase):
             return op(ofp_file_key_value, values[0])
 
     @classmethod
-    def get_or_create(cls, **kwargs):
-        from central_load_plan.extension import db
+    def select_factory(cls):
+        # original motivation is a class-specific pagination query for
+        # QueryFormManager because it needs a query to apply criteria to.
+        query = db.select(cls).order_by(cls.name)
+        return query
 
+    @classmethod
+    def query_factory(cls):
+        # for QuerySelectField where the terrible name actually means return
+        # the results; not the query itself.
+        return db.session.scalars(self.select_factory).all()
+
+    @classmethod
+    def get_or_create(cls, **kwargs):
         query = (
             db.session.scalars(cls)
             .filter_by(**kwargs)
@@ -194,11 +220,12 @@ class OFPCondition(CLPBase):
         op_sym = self.__symbols__.get(self.operator, self.operator)
 
         # Get string representations of values
-        value_strings = [repr(v.value) for v in self.values]
+        value_strings = [str(v.value) for v in self.values]
 
         if self.operator == "contains":
             # For multi-value "contains"
-            val_str = "[" + ", ".join(value_strings) + "]"
+            #val_str = "[" + ", ".join(value_strings) + "]"
+            val_str = english_list(value_strings, ' or ')
         else:
             # Single-value operators
             if value_strings:
@@ -209,8 +236,16 @@ class OFPCondition(CLPBase):
         return f"{self.ofp_key} {op_sym} {val_str}"
 
     @property
+    def send_tos_as_html(self):
+        html = ['<ul class="value-list">']
+        for send_to in sorted(self.send_to_templates, key=attgetter('address')):
+            html.append(f'<li>{ send_to.email.address.as_html }</li>')
+        html.append('</ul>')
+        return Markup(''.join(html))
+
+    @property
     def condition_as_html(self):
-        html = ['<span class="python-expression">']
+        html = ['<span class="expression">']
 
         # OFPFile key to apply match
         html.append(f'<span class="key">{self.ofp_key}</span>')
@@ -221,19 +256,17 @@ class OFPCondition(CLPBase):
 
         if self.values:
             if len(self.values) > 1:
-                html.append('<ul>')
-                for ofp_conditon_value in self.values:
-                    html.append(f'<li class="literal">{ ofp_conditon_value.value }</li>')
-
+                html.append('<ul class="value-list">')
+                for ofp_conditon_value in sorted(self.values, key=attrgetter('value')):
+                    html.append(f'<li class="data">{ ofp_conditon_value.value }</li>')
                 html.append('</ul>')
             else:
-                one_value = self.values[0].value
-                html.append(f'<span class="literal">{ one_value }</span>')
+                html.append(f'<span class="data">{ self.values[0].value }</span>')
 
         return Markup(''.join(html))
 
 
-class OFPConditionValue(CLPBase):
+class OFPConditionValue(db.Model):
 
     __tablename__ = 'ofp_condition_value'
 

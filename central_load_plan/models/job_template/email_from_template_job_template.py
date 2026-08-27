@@ -17,7 +17,7 @@ class EmailFromTemplateJobTemplate(JobTemplate):
 
     __job_class__ = EmailFromTemplateJob
 
-    __tablename__ = 'email_from_template_job_template'
+    __tablename__ = 'job_template_email_from_template'
 
     __table_args__ = {
         'comment':
@@ -51,7 +51,7 @@ class EmailFromTemplateJobTemplate(JobTemplate):
     def send_tos_html_list(self):
         html = ['<ul>']
         for recipient in self.send_tos:
-            html.append(f'<li><address>{recipient.email.address}</address></li>')
+            html.append(f'<li>{recipient.address_html_with_condtion}</li>')
         html.append('</ul>')
         return Markup(''.join(html))
 
@@ -86,14 +86,21 @@ class EmailFromTemplateJobTemplate(JobTemplate):
         return self.ofp_condition.is_match(ofp_file)
 
     def make_job(self, ofp_file):
-        return self.__job_class__(
-            ofp_file = ofp_file,
-            name = self.name,
-            send_tos = self.send_tos_for_conditions(ofp_file),
-            from_email = self.from_email,
-            template_name = self.template_name,
-            subject = self.subject,
-        )
+        # polybase.Job:
+        kwargs = {
+            'ofp_file': ofp_file,
+            'job_template': self,
+        }
+
+        # EmailFromTemplateJob subclass:
+        kwargs.update({
+            'from_email': self.from_email,
+            'send_tos': self.send_tos_for_conditions(ofp_file),
+            'template_name': self.template_name,
+            'subject': self.subject,
+        })
+
+        return self.__job_class__(**kwargs)
 
     def html_preview(self, ofp_file):
         """

@@ -1,10 +1,13 @@
 import uuid
 
+from abc import ABC
+from abc import abstractmethod
+
 import sqlalchemy as sa
 
-from central_load_plan.models.clp_base import CLPBase
+from central_load_plan.extension import db
 
-class Job(CLPBase):
+class Job(db.Model):
     """
     Some work to do with OFP data.
     """
@@ -17,25 +20,36 @@ class Job(CLPBase):
 
     id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
 
-    name = sa.Column(sa.String, nullable=False)
-
     job_type_name = sa.Column(
         sa.String,
         comment = 'polymorphic job type identifier.',
     )
 
-    ofp_file_id = sa.Column(sa.ForeignKey('ofp_file.id'))
-
-    ofp_condition_id = sa.Column(sa.ForeignKey('ofp_condition.id'))
-
-    ofp_condition = sa.orm.relationship(
-        'OFPCondition',
+    job_template_id = sa.Column(
+        sa.Uuid,
+        db.ForeignKey('job_template.id'),
+        nullable = False,
+        comment = 'FK to the job template that created this job',
     )
+
+    job_template = db.orm.relationship(
+        'JobTemplate',
+        back_populates = 'jobs',
+    )
+
+    ofp_file_id = sa.Column(sa.ForeignKey('ofp_file.id'))
 
     ofp_file = sa.orm.relationship(
         'OFPFile',
         back_populates = 'jobs',
     )
 
-    def do_work(self):
-        raise NotImplementedError(str(self))
+    @abstractmethod
+    def do_work(self, ofp_file):
+        # TODO
+        # - alembic
+        # - add field "do_work_at" datetime
+        # - can we guess approximate it from ofp_file.mtime? should be very close.
+        # - also so that we can make it not-null.
+        # - web interface to re-do jobs for ofp_file objects
+        pass

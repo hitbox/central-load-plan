@@ -2,9 +2,9 @@ import uuid
 
 import sqlalchemy as sa
 
-from .clp_base import CLPBase
+from central_load_plan.extension import db
 
-class Airport(CLPBase):
+class Airport(db.Model):
     """
     Airport station
     """

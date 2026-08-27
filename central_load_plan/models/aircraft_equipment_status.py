@@ -8,10 +8,9 @@ import sqlalchemy as sa
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from .clp_base import CLPBase
-from central_load_plan.parsers import expiration_datetime_from_raw_text
+from central_load_plan.extension import db
 
-class AircraftEquipmentStatusDescription(CLPBase):
+class AircraftEquipmentStatusDescription(db.Model):
 
     __tablename__ = 'aircraft_equipment_status_description'
 
@@ -49,20 +48,15 @@ class AircraftEquipmentStatusDescription(CLPBase):
 
     @classmethod
     def expiration_datetime_from_raw_text(cls, raw_text, text_timezone, ignore_missing=False):
+        from central_load_plan.parsers import expiration_datetime_from_raw_text
         return expiration_datetime_from_raw_text(
             raw_text = raw_text,
             text_timezone = text_timezone,
             ignore_missing = ignore_missing,
         )
 
-    @classmethod
-    def make_expiration_datetime_parser(cls, ignore_missing=False, text_timezone=None):
-        def f(raw_text):
-            return cls.expiration_datetime_from_raw_text(raw_text, ignore_missing=ignore_missing, text_timezone=text_timezone)
-        return f
 
-
-class AircraftEquipmentStatus(CLPBase):
+class AircraftEquipmentStatus(db.Model):
 
     __tablename__ = 'aircraft_equipment_status'
 
@@ -130,7 +124,7 @@ class AircraftEquipmentStatus(CLPBase):
     )
 
 
-class AircraftEquipmentStatusItem(CLPBase):
+class AircraftEquipmentStatusItem(db.Model):
 
     __tablename__ = 'aircraft_equipment_status_item'
 
