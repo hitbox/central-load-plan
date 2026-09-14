@@ -89,6 +89,7 @@ class EmailFromTemplateJob(Job):
         msg['Subject'] = subject
         msg['From'] = from_addr
         msg['To'] = ', '.join(to_addresses)
+        msg['Auto-Submitted'] = 'auto-generated'
 
         body = rendering.render(self.template_name, ofp_data, self.ofp_file)
         msg.set_content(body)
