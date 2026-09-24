@@ -413,6 +413,7 @@ send_to_template_blueprint.add_url_rule(
         template = 'admin/table.html',
         table = Table(
             columns = [
+                TableColumn('Name', 'name'),
                 TableColumn('OFP Condition', 'ofp_condition_as_html'),
                 TableColumn('Email', 'email.address'),
             ],
@@ -455,7 +456,7 @@ email_from_template_job_template_blueprint.add_url_rule(
             columns = [
                 TableColumn('Name', 'name'),
                 TableColumn('OFP Condition', 'ofp_condition.condition_as_html'),
-                TableColumn('Recipients', 'send_tos_html_list'),
+                TableColumn('Send-tos', 'send_tos_html_list'),
             ],
         ),
     ),

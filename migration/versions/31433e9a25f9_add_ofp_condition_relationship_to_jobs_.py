@@ -18,10 +18,20 @@ depends_on = None
 
 
 def upgrade():
-    """Upgrade schema."""
+    """
+    Upgrade schema.
+    """
     # Add JobTemplate relationship to Job classes.
     # Nullable to fill first.
-    op.add_column('job', sa.Column('job_template_id', sa.Uuid(), nullable=True, comment='FK to the job template that created this job'))
+    op.add_column(
+        'job',
+        sa.Column(
+            'job_template_id',
+            sa.Uuid(),
+            nullable = True,
+            comment = 'FK to the job template that created this job',
+        )
+    )
 
     # Update job_template_id by matching JobTemplate.job_type_name on existing
     op.execute(
@@ -59,7 +69,9 @@ def upgrade():
     op.drop_column('job', 'name')
 
 def downgrade():
-    """Downgrade schema."""
+    """
+    Downgrade schema.
+    """
     op.add_column('job', sa.Column('name', sa.VARCHAR(), autoincrement=False, nullable=False))
     op.add_column('job', sa.Column('ofp_condition_id', sa.UUID(), autoincrement=False, nullable=True))
     op.drop_constraint(None, 'job', type_='foreignkey')

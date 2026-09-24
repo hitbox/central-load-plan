@@ -4,6 +4,7 @@ import warnings
 import sqlalchemy as sa
 
 from markupsafe import Markup
+from sqlalchemy.ext.associationproxy import association_proxy
 
 from central_load_plan.extension import db
 
@@ -36,6 +37,8 @@ class SendToTemplate(db.Model):
 
     id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
 
+    name = sa.Column(sa.String, unique=True, nullable=False)
+
     # Parent EmailFromTemplateJobTemplate
     email_from_template_job_template_id = sa.Column(
         sa.Uuid,
@@ -56,6 +59,11 @@ class SendToTemplate(db.Model):
         back_populates = 'send_to_templates',
     )
 
+    ofp_condition_name = association_proxy(
+        'ofp_condition',
+        'name',
+    )
+
     # Email to append to list if OFPCondition is met.
     email_id = sa.Column(sa.Uuid, sa.ForeignKey('email.id'))
 
@@ -73,10 +81,16 @@ class SendToTemplate(db.Model):
 
     @property
     def address_html_with_condtion(self):
+        """
+        Produce an HTML, short brief of what emails get sent under what
+        conditions.
+        """
         html = []
 
         if self.ofp_condition:
-            html.append(f'Send to <address>{self.email.address}</address> for {self.ofp_condition.condition_as_string}')
+            html.append(
+                f'Send to <address>{self.email.address}</address> when'
+                f' {self.ofp_condition.condition_as_string}')
         else:
             html.append(f'Always send to <address>{self.email.address}</address>')
 

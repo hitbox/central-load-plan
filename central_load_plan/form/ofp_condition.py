@@ -10,8 +10,6 @@ from wtforms import SubmitField
 from wtforms import TimeField
 from wtforms.validators import DataRequired
 from wtforms.validators import ValidationError
-from wtforms_sqlalchemy.fields import QuerySelectField
-from wtforms_sqlalchemy.orm import model_form
 
 from central_load_plan.extension import db
 from central_load_plan.models import JobTemplate

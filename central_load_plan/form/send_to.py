@@ -26,9 +26,15 @@ from central_load_plan.field import JSONField
 
 class EditSendToForm(FlaskForm):
 
+    name = StringField()
+
     ofp_condition = QuerySelectField(
         query_factory = OFPCondition.query_factory,
+        get_label = 'name',
+        allow_blank = True,
     )
+
+    update = SubmitField()
 
 def validate_values_for_operator(form, values_field):
     if form.operator.data != 'contains':

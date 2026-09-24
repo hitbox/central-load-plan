@@ -196,7 +196,7 @@ class OFPCondition(db.Model):
     def query_factory(cls):
         # for QuerySelectField where the terrible name actually means return
         # the results; not the query itself.
-        return db.session.scalars(self.select_factory).all()
+        return db.session.scalars(cls.select_factory()).all()
 
     @classmethod
     def get_or_create(cls, **kwargs):

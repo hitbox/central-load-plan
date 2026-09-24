@@ -6,6 +6,7 @@ Revises: 31433e9a25f9
 Create Date: 2026-08-17 14:05:55.570024
 
 """
+import logging
 import uuid
 
 from enum import Enum
@@ -20,6 +21,8 @@ revision= 'cefbec432f72'
 down_revision = '31433e9a25f9'
 branch_labels = None
 depends_on = None
+
+logger = logging.getLogger('alembic')
 
 # Basically put job_ in front so that tables group together logically.
 
@@ -269,60 +272,59 @@ class Email(Base):
 
     display_name = sa.Column(sa.String, nullable=True)
 
-    #send_tos = sa.orm.relationship(
-    #    'SendTo',
-    #    back_populates = 'email',
-    #)
-
-    #send_to_templates = sa.orm.relationship(
-    #    'SendToTemplate',
-    #    back_populates = 'email',
-    #)
-
 
 def replace_p_prefix_email_and_conditions():
     # Delete OFPCondition objects what contain string 'Equal' in their names.
     # These are the conditions for the P-prefix stations/emails.
 
-    # Manually cascade delete referenced value objects
-    op.execute(
-        sa.text("""
+    # Manually cascade delete referenced OFPConditionValue objects
+
+    name_like = 'OFP origin IATA Equals %'
+    logger.info('DELETE ofp_condition_value ILIKE %s', name_like)
+    params = {'name_like': name_like}
+    # These should be:
+    # OFP origin IATA Equals ANC,
+    # OFP origin IATA Equals HKO,
+    # OFP origin IATA Equals HLI,
+    # OFP origin IATA Equals HNL,
+    # OFP origin IATA Equals HOG,
+    stmt = sa.text("""
         DELETE FROM ofp_condition_value
         WHERE ofp_condition_id IN (
             SELECT id
             FROM ofp_condition
-            WHERE name ILIKE '%Equal%'
+            WHERE name ILIKE :name_like
         )
-        """)
-    )
+        """).bindparams(**params)
+    op.execute(stmt)
 
-    op.execute(
-        sa.text("""
+    # Delete SendToTemplate
+    logger.info('DELETE send_to_template ILIKE %s', name_like)
+    stmt = sa.text("""
         DELETE FROM send_to_template
         WHERE ofp_condition_id IN (
             SELECT id
             FROM ofp_condition
-            WHERE name ILIKE '%Equal%'
+            WHERE name ILIKE :name_like
         )
-        """)
-    )
+        """).bindparams(**params)
+    op.execute(stmt)
 
     # Delete the OFPCondition objects that were pointing to those conditions.
-    op.execute(
-        sa.text("""
-            DELETE FROM ofp_condition WHERE name ILIKE '%Equal%'
-        """)
+    logger.info('DELETE ofp_condition ILIKE %s', name_like)
+    stmt = (
+        sa.text('DELETE FROM ofp_condition WHERE name ILIKE :name_like')
+        .bindparams(**params)
     )
+    op.execute(stmt)
 
     session = sa.orm.Session(bind=op.get_bind())
 
-    ofp_condition_id = uuid.uuid4()
-
     ofp_condition = OFPCondition(
-        id = ofp_condition_id,
-        name = 'OFP origin IATA for P-prefix stations',
+        id = uuid.uuid4(),
+        name = 'P-prefix stations',
         blurb =
-            'Match P... IATA origin stations and send to P{origin_iata}-clp email address.',
+            'Match IATA origin stations that need a P prefix and send to P{origin_iata}-clp@airtransport.cc email address.',
         ofp_key = 'origin_iata',
         operator = 'contains',
         values = [
@@ -355,6 +357,14 @@ def replace_p_prefix_email_and_conditions():
             ),
         )
     )
+
+    query = (
+        sa.select(OFPCondition)
+        .where(OFPCondition.name == 'Send OFP origin IATA to K-prefixed generated email address from OFP iata codes that do not have a K prefix.')
+    )
+    ofp_condition = session.scalars(query).one()
+
+    ofp_condition.name = 'K-prefixed stations'
 
     session.commit()
 
