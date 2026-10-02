@@ -54,7 +54,7 @@ class TrimmedNameMixin:
     def trimmed_first_name(cls):
         return sa.func.trim(cls.first_name)
 
-    @classmethod
+    @hybrid_property
     def trimmed_employee_no(cls):
         return sa.func.trim(cls.employee_no)
 
@@ -494,6 +494,14 @@ class NonCrewMember(TrimmedNameMixin, LSYBase):
 
     employee_id = sa.Column(sa.String(12), primary_key=True, nullable=False)
 
+    @hybrid_property
+    def trimmed_employee_id(self):
+        return self.employee_id.strip()
+
+    @trimmed_employee_id.expression
+    def trimmed_employee_id(cls):
+        return sa.func.trim(cls.employee_id)
+
     first_name = sa.Column(sa.String(30), nullable=False)
     middle_name = sa.Column(sa.String(30), nullable=False)
     name = sa.Column(sa.String(30), nullable=False)
@@ -584,8 +592,9 @@ class RemarkOfEvent(LSYBase):
         Yield person dicts for all jumpseat remarks.
         """
         for person_type, remaining in self.parse_jumpseat_substrings():
-            query = JumpseatQueryManager.build_query(person_type, remaining)
+            query = JumpseatQueryManager.build_query(person_type, person_id=remaining)
             if query is not None:
+                logger.debug(dump_literal_sql(session, query))
                 # known person type, fetch from DB
                 for row in session.execute(query).mappings():
                     yield dict(row)
@@ -624,8 +633,8 @@ class JumpseatQueryManager:
     """
 
     models = {
-        'C': (LSYCrewMember, LSYCrewMember.employee_no, LSYCrewMember.trimmed_employee_no),
-        'N': (NonCrewMember, NonCrewMember.employee_id, LSYCrewMember.trimmed_employee_no),
+        'C': (LSYCrewMember, LSYCrewMember.trimmed_employee_no, LSYCrewMember.trimmed_employee_no),
+        'N': (NonCrewMember, NonCrewMember.trimmed_employee_id, NonCrewMember.trimmed_employee_id),
     }
 
     @classmethod
