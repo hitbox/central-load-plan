@@ -44,7 +44,7 @@ class EmailFromTemplateJob(Job):
 
     @db.validates('template_name')
     def validate_template_name(self, key, value):
-        pass
+        return value
 
     subject = sa.Column(
         sa.String,
