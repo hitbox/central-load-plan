@@ -43,8 +43,10 @@ class MoveFileJobTemplate(JobTemplate):
 
     def make_job(self, ofp_file):
         return self.__job_class__(
+            # Base
             ofp_file = ofp_file,
-            name = self.name,
+            job_template = self,
+            # MoveFileJob
             destination_path = self.destination_path,
         )
 

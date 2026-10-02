@@ -63,7 +63,6 @@ class JSONOutputJobTemplate(JobTemplate):
     def make_job(self, ofp_file):
         return self.__job_class__(
             ofp_file = ofp_file,
-            ofp_condition = self.ofp_condition,
-            name = self.name,
             output_path = self.output_path,
+            job_template = self,
         )

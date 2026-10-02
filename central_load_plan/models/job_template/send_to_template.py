@@ -97,12 +97,6 @@ class SendToTemplate(db.Model):
         return Markup(''.join(html))
 
     def make_job(self):
-        warnings.warn(
-            f'{self}.make_job is unexpectedly being called.',
-            RunTimeWarning,
-            stacklevel = 2,
-        )
         return self.__job_class__(
             email = self.email,
-            ofp_condition = self.ofp_condition,
         )
