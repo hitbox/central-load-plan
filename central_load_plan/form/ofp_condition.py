@@ -18,8 +18,7 @@ from central_load_plan.models import JobTypeEnum
 from central_load_plan.models import OFPCondition
 from central_load_plan.models import OFPConditionValue
 from central_load_plan.models import OFPFile
-from central_load_plan.singlepage import DynamicListWidget
-from central_load_plan.widget import NestedFormWidget
+from central_load_plan.widget import DynamicListWidget
 from central_load_plan.field import JSONField
 
 def validate_values_for_operator(form, values_field):
