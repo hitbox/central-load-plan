@@ -54,7 +54,9 @@ class OFPFile(db.Model):
         info = {
             'help': 'Existing path.',
         },
-        comment = 'Path file was moved to for archiving.',
+        comment =
+            'Path file was moved to for archiving. Field remains null until'
+            ' work for the file is finished.',
     )
 
     @property
@@ -228,6 +230,7 @@ class OFPFile(db.Model):
     jobs = sa.orm.relationship(
         'Job',
         back_populates = 'ofp_file',
+        order_by = 'Job.execution_position',
     )
 
     @property
