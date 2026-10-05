@@ -98,6 +98,7 @@ class EmailFromTemplateJobTemplate(JobTemplate):
             'send_tos': self.send_tos_for_conditions(ofp_file),
             'template_name': self.template_name,
             'subject': self.subject,
+            'execution_position': self.execution_position,
         })
 
         return self.__job_class__(**kwargs)

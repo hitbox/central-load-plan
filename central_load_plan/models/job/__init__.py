@@ -1,5 +1,5 @@
 """
-Job subclasses that `do_work`.
+Job subclasses that `do_work` or support it.
 """
 from .email_from_template_job import EmailFromTemplateJob
 from .file_output_from_template_job import FileOutputFromTemplateJob
@@ -21,7 +21,7 @@ _classes = [
     Job,
 ]
 
-# Raise for missing methods
+# Raise for missing `do_work` methods on concrete Job classes.
 for class_ in _classes:
     if 'do_work' not in class_.__dict__:
         raise TypeError(f'Must implement `do_work` for {class_}')

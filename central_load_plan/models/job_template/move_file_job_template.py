@@ -42,13 +42,15 @@ class MoveFileJobTemplate(JobTemplate):
     )
 
     def make_job(self, ofp_file):
-        return self.__job_class__(
+        kwargs = {
             # Base
-            ofp_file = ofp_file,
-            job_template = self,
+            'ofp_file': ofp_file,
+            'job_template': self,
+            'execution_position': self.execution_position,
             # MoveFileJob
-            destination_path = self.destination_path,
-        )
+            'destination_path': self.destination_path,
+        }
+        return self.__job_class__(**kwargs)
 
     def html_preview(self, ofp_file):
         """

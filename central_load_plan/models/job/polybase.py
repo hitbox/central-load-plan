@@ -37,6 +37,12 @@ class Job(db.Model):
         back_populates = 'jobs',
     )
 
+    execution_position = sa.Column(
+        sa.Integer,
+        nullable = False,
+        comment = 'execution ordering among matching jobs',
+    )
+
     ofp_file_id = sa.Column(sa.ForeignKey('ofp_file.id'))
 
     ofp_file = sa.orm.relationship(
@@ -44,12 +50,20 @@ class Job(db.Model):
         back_populates = 'jobs',
     )
 
+    completed_at = sa.Column(
+        sa.DateTime(timezone=True),
+        nullable = True,
+        comment = 'Job\'s work done at timestamp.',
+    )
+
     @abstractmethod
-    def do_work(self, ofp_file):
+    def do_work(self):
+        """
+        """
         # TODO
         # - alembic
         # - add field "do_work_at" datetime
         # - can we guess approximate it from ofp_file.mtime? should be very close.
         # - also so that we can make it not-null.
         # - web interface to re-do jobs for ofp_file objects
-        pass
+        raise NotImplementedError

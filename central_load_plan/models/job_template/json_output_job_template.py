@@ -61,8 +61,10 @@ class JSONOutputJobTemplate(JobTemplate):
         return Markup(''.join(html))
 
     def make_job(self, ofp_file):
-        return self.__job_class__(
-            ofp_file = ofp_file,
-            output_path = self.output_path,
-            job_template = self,
-        )
+        kwargs = {
+            'execution_position': self.execution_position,
+            'ofp_file': ofp_file,
+            'output_path': self.output_path,
+            'job_template': self,
+        }
+        return self.__job_class__(**kwargs)
