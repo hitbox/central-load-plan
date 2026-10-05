@@ -87,8 +87,6 @@ class OFPFile(db.Model):
         if self.flight_identifier:
             return self.flight_identifier[:3]
 
-    #airline_iata_code = sa.Column(sa.String)
-
     airline_id = sa.Column(
         sa.Uuid(as_uuid=True),
         sa.ForeignKey('airline.id')
