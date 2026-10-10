@@ -18,8 +18,6 @@ from central_load_plan.models import OFPFile
 from central_load_plan.parsers import FlightPlanParser
 from central_load_plan.schema import OperationalFlightPlanSchema
 
-from central_load_plan import service
-
 check_bp = Blueprint('check', __name__)
 
 check_bp.cli.help = 'Command line interface checking application.'
