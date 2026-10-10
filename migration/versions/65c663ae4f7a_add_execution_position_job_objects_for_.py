@@ -27,16 +27,6 @@ def upgrade():
         ),
     )
 
-    op.add_column(
-        'job',
-        sa.Column(
-            'completed_at',
-            sa.DateTime(timezone=True),
-            nullable = True,
-            comment = 'Job\'s work done at timestamp.',
-        ),
-    )
-
     # Update new execution_position from existing job objects
     op.execute(
         sa.text('''
