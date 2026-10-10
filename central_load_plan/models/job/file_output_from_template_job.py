@@ -31,7 +31,6 @@ class FileOutputFromTemplateJob(Job):
     output_path = sa.Column(sa.String, nullable=False)
 
     def do_work(self):
-
         # build ofp data
         ofp_data = self.ofp_file.as_dict_with_crew()
 
