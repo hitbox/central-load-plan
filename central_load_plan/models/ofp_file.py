@@ -1,6 +1,7 @@
 import os
 import time
 import uuid
+import logging
 
 from datetime import timedelta
 from datetime import datetime
@@ -14,6 +15,8 @@ from central_load_plan.engine import get_lsyrept_engine
 from central_load_plan.extension import db
 from central_load_plan.models.lsyrept import crew_members_from_ofp
 from central_load_plan.parsers import FlightPlanParser
+
+logger = logging.getLogger(__name__)
 
 class OFPFile(db.Model):
     """
@@ -327,7 +330,7 @@ class OFPFile(db.Model):
                 'aircraft_equipment_status_list',
             ])
             for key in self.__dict_keys__:
-                if key not in ():
+                if key not in ignore:
                     try:
                         setattr(self, key, getattr(ofp_file, key))
                     except AttributeError:
@@ -341,6 +344,7 @@ class OFPFile(db.Model):
         ofp_data = self.as_dict()
 
         engine = get_lsyrept_engine(self.airline_iata_code)
+        logger.info('engine = %r', engine)
         with Session(engine) as session:
             crewmembers_result = crew_members_from_ofp(session, self)
             ofp_data['crewmembers'] = crewmembers_result['crew_members']
