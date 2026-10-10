@@ -38,7 +38,7 @@ class FilterMixin:
             #cls.flight_no == flight_no_value,
             sa.func.trim(cls.airport_c_is_dep) == ofp_file.origin_iata,
             sa.func.trim(cls.airport_c_is_dest) == ofp_file.destination_iata,
-            cls.departure_date_scd == ofp_file.scheduled_departure_time.date(),
+            cls.departure_date_scd == scheduled_departure_time_utc.date(),
             # departure_time_scd is stored as CHAR(4) UTC string
             sa.func.trim(cls.departure_time_scd) == scheduled_departure_time_utc.strftime('%H%M'),
         )
