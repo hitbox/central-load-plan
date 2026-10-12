@@ -32,8 +32,12 @@ def build_jobs(path, flight_plan_parser, flight_plan_schema):
     Parse a single file path and build Job objects.
     Pure-ish function: no DB commits, only constructs jobs.
     """
+    jobs = []
     if not os.path.isfile(path):
-        return []
+        return jobs
+
+    if not os.path.exists(path):
+        return jobs
 
     path = os.path.normpath(path)
 
@@ -47,7 +51,6 @@ def build_jobs(path, flight_plan_parser, flight_plan_schema):
         ofp_file,
     )
 
-    jobs = []
     for job_template in job_templates:
         jobs.append(job_template.make_job(ofp_file))
 
@@ -65,6 +68,7 @@ def work(args, cp):
         files_with_pending_jobs = (
             sa.select(OFPFile)
             .where(
+                OFPFile.archive_path.is_(None),
                 OFPFile.jobs.any(
                     Job.completed_at.is_(None),
                 )
@@ -92,23 +96,37 @@ def work(args, cp):
         logger.info('sleeping %s seconds', sleep_seconds)
         time.sleep(sleep_seconds)
 
-def add_jobs_for_path(path, flight_plan_parser, flight_plan_schema):
-    """
-    High-level convenience function to run jobs against a new path.
-    """
-    # incoming paths are named simply and can often be duplicated later.
+def get_mtime_utc(path):
+    return datetime.fromtimestamp(os.path.getmtime(path), tz=timezone.utc)
+
+def instance_from_path(path):
     path = os.path.normpath(path)
-    mtime = os.path.getmtime(path)
+    try:
+        mtime = get_mtime_utc(path)
+    except FileNotFoundError:
+        # the job service could have moved our file while we were looking at it
+        # again because of glob.
+        return None
+
     exists_query = (
         db.select(OFPFile)
         .where(
             OFPFile.original_path == path,
             OFPFile.mtime == mtime,
-        ),
+        )
     )
 
-    exists = db.session.scalars(exists_query).one_or_none()
+    instance = db.session.scalars(exists_query).one_or_none()
+    return instance
+
+def add_jobs_for_path(path, flight_plan_parser, flight_plan_schema):
+    """
+    High-level convenience function to run jobs against a new path.
+    """
+    # incoming paths are named simply and can often be duplicated later.
+    exists = instance_from_path(path)
     if exists:
+        mtime = get_mtime_utc(path)
         logger.info(
             'skip adding jobs, OFPFile already exists for path=%s, mtime=%s',
             path, mtime)
@@ -135,8 +153,10 @@ def watch(args, cp):
     watch_cp = cp['watch']
     sleep_seconds = watch_cp.getfloat('sleep_seconds', fallback=1.0)
 
+    logger.info('sleep_seconds=%s', sleep_seconds)
+
     glob_pattern = watch_cp['glob_pattern']
-    recursive = watch_cp.getboolean('recursive')
+    recursive = watch_cp.getboolean('recursive', fallback=False)
 
     flight_plan_parser = FlightPlanParser()
     flight_plan_schema = OperationalFlightPlanSchema()
@@ -144,8 +164,10 @@ def watch(args, cp):
     logger.info('starting watch')
     while True:
         for path in glob.iglob(glob_pattern, recursive=recursive):
+            path = os.path.normpath(path)
             logger.info('%s', path)
             add_jobs_for_path(path, flight_plan_parser, flight_plan_schema)
+        logger.info('sleeping %s seconds', sleep_seconds)
         time.sleep(sleep_seconds)
 
 def make_argument_parser():
