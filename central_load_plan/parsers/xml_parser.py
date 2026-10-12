@@ -1,6 +1,7 @@
 """
 Declarative style XML parsing.
 """
+import time
 import xml.etree.ElementTree as ET
 
 class Parser:
@@ -23,7 +24,15 @@ class Parser:
         """
         Parse and return the data from an XML file.
         """
-        tree = ET.parse(path)
+        for attempt in range(3):
+            try:
+                tree = ET.parse(path)
+                break
+            except ET.ParseError:
+                if attempt == 2:
+                    raise
+                time.sleep(1)
+
         root = tree.getroot()
         data = {}
         for field in cls.fields():
