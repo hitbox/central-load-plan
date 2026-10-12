@@ -57,7 +57,8 @@ def work(args, cp):
     """
     Run pending jobs from database forever.
     """
-    sleep_seconds = 1
+    work_cp = cp['work']
+    sleep_seconds = work_cp.getfloat('sleep_seconds', fallback=1.0)
     logger = logging.getLogger('central_load_plan.service.work')
 
     while True:
@@ -96,17 +97,21 @@ def add_jobs_for_path(path, flight_plan_parser, flight_plan_schema):
     High-level convenience function to run jobs against a new path.
     """
     # incoming paths are named simply and can often be duplicated later.
+    path = os.path.normpath(path)
+    mtime = os.path.getmtime(path)
     exists_query = (
         db.select(OFPFile)
         .where(
             OFPFile.original_path == path,
-            OFPFile.mtime == os.path.getmtime(path),
+            OFPFile.mtime == mtime,
         ),
     )
 
     exists = db.session.scalars(exists_query).one_or_none()
     if exists:
-        logger.info('skip adding jobs, OFPFile already exists for %s', path)
+        logger.info(
+            'skip adding jobs, OFPFile already exists for path=%s, mtime=%s',
+            path, mtime)
         return
 
     jobs = build_jobs(
@@ -128,6 +133,7 @@ def watch(args, cp):
     logger = logging.getLogger('central_load_plan.service.watch')
 
     watch_cp = cp['watch']
+    sleep_seconds = watch_cp.getfloat('sleep_seconds', fallback=1.0)
 
     glob_pattern = watch_cp['glob_pattern']
     recursive = watch_cp.getboolean('recursive')
@@ -140,7 +146,7 @@ def watch(args, cp):
         for path in glob.iglob(glob_pattern, recursive=recursive):
             logger.info('%s', path)
             add_jobs_for_path(path, flight_plan_parser, flight_plan_schema)
-        time.sleep(1)
+        time.sleep(sleep_seconds)
 
 def make_argument_parser():
     parser = argparse.ArgumentParser(
