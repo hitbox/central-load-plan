@@ -44,14 +44,16 @@ class FileOutputFromTemplateJobTemplate(JobTemplate):
     output_path = sa.Column(sa.String, nullable=False)
 
     def make_job(self, ofp_file):
-        return self.__job_class__(
+        kwargs = {
             # Job (polybase):
-            job_template = self,
-            ofp_file = ofp_file,
+            'job_template': self,
+            'ofp_file': ofp_file,
+            'execution_position': self.execution_position,
             # FileOutputFromTemplateJob:
-            template_name = self.template_name,
-            output_path = self.output_path,
-        )
+            'template_name': self.template_name,
+            'output_path': self.output_path,
+        }
+        return self.__job_class__(**kwargs)
 
     def html_preview(self, ofp_file):
         ofp_data = ofp_file.as_dict_with_crew()

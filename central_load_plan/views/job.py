@@ -17,34 +17,11 @@ from central_load_plan.models import OFPFile
 from central_load_plan.parsers import FlightPlanParser
 from central_load_plan.schema import OperationalFlightPlanSchema
 
-from central_load_plan import service
-
 job_bp = Blueprint('job', __name__)
 
 job_bp.cli.help = 'Command line interface for normal file processing.'
 
 logger = logging.getLogger(__name__)
-
-@job_bp.cli.command('process')
-@click.option('--glob_pattern')
-@click.option('--config-var')
-@click.option('--recursive/--no-recursive')
-def process(glob_pattern, config_var, recursive):
-    """
-    Find new files with given glob pattern or names for one from config, and
-    process configured jobs for them.
-    """
-    if glob_pattern and config_var:
-        raise click.UsageError(f'Options are mutually exclusive.')
-
-    if config_var:
-        glob_pattern = current_app.config[config_var]
-
-    flight_plan_parser = FlightPlanParser()
-    flight_plan_schema = OperationalFlightPlanSchema()
-
-    for path in glob.iglob(glob_pattern, recursive=recursive):
-        service.process_path(db.session, path, flight_plan_parser, flight_plan_schema)
 
 @job_bp.cli.command('process-forever')
 @click.option('--glob_pattern')

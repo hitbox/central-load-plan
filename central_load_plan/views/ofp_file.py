@@ -19,7 +19,6 @@ from central_load_plan.models import OFPFile
 from central_load_plan.models.lsyrept import crew_members_from_ofp
 from central_load_plan.parsers import FlightPlanParser
 from central_load_plan.schema import OperationalFlightPlanSchema
-from central_load_plan.service import build_jobs
 
 ofp_file_bp = Blueprint('ofp_file', __name__)
 
@@ -77,32 +76,3 @@ def load_from_archive(commit_every, config_var):
                 db.session.commit()
 
     db.session.commit()
-
-@ofp_file_bp.cli.command('adhoc')
-@click.option('--limit', type=int, default=10)
-def adhoc(limit):
-    """
-    Re-send/re-do the JSON output jobs' work for some amount of recent ofp file
-    database objects.
-    """
-    logger = logging.getLogger(f'{__name__}.load_from_archive')
-    query = (
-        db.select(OFPFile)
-        .where(OFPFile.archive_path.is_not(None))
-        .order_by(OFPFile.mtime.desc())
-        .limit(limit)
-    )
-    files = db.session.scalars(query).all()
-
-    flight_plan_parser = FlightPlanParser()
-    flight_plan_schema = OperationalFlightPlanSchema()
-
-    logger.info('resending json files')
-
-    files_and_jobs = []
-    for ofp_file in files:
-        jobs = build_jobs(db.session, ofp_file.archive_path, flight_plan_parser, flight_plan_schema)
-        for job in jobs:
-            if (time.time() - ofp_file.mtime) < 60 * 60 * 3:
-                job.do_work()
-                click.echo((ofp_file.mtime_dt, ofp_file.archive_path))

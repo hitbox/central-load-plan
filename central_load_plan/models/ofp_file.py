@@ -25,6 +25,16 @@ class OFPFile(db.Model):
 
     __tablename__ = 'ofp_file'
 
+    __table_args__ = (
+        # (original_path, mtime) index for existence check.
+        sa.Index(
+            'ix_ofp_file_original_path_mtime',
+            'original_path',
+            'mtime',
+            unique = False,
+        ),
+    )
+
     id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
 
     original_path = sa.Column(
@@ -57,7 +67,9 @@ class OFPFile(db.Model):
         info = {
             'help': 'Existing path.',
         },
-        comment = 'Path file was moved to for archiving.',
+        comment =
+            'Path file was moved to for archiving. Field remains null until'
+            ' work for the file is finished.',
     )
 
     @property
@@ -89,8 +101,6 @@ class OFPFile(db.Model):
     def flight_identifier_first_three(self):
         if self.flight_identifier:
             return self.flight_identifier[:3]
-
-    #airline_iata_code = sa.Column(sa.String)
 
     airline_id = sa.Column(
         sa.Uuid(as_uuid=True),
@@ -233,6 +243,7 @@ class OFPFile(db.Model):
     jobs = sa.orm.relationship(
         'Job',
         back_populates = 'ofp_file',
+        order_by = 'Job.execution_position',
     )
 
     @property
