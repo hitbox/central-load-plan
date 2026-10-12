@@ -96,6 +96,19 @@ def add_jobs_for_path(path, flight_plan_parser, flight_plan_schema):
     High-level convenience function to run jobs against a new path.
     """
     # incoming paths are named simply and can often be duplicated later.
+    exists_query = (
+        db.select(OFPFile)
+        .where(
+            OFPFile.original_path == path,
+            OFPFile.mtime == os.path.getmtime(path),
+        ),
+    )
+
+    exists = db.session.scalars(exists_query).one_or_none()
+    if exists:
+        logger.info('skip adding jobs, OFPFile already exists for %s', path)
+        return
+
     jobs = build_jobs(
         path = path,
         flight_plan_parser = flight_plan_parser,

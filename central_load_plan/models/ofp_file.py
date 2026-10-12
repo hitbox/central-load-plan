@@ -25,6 +25,16 @@ class OFPFile(db.Model):
 
     __tablename__ = 'ofp_file'
 
+    __table_args__ = (
+        # (original_path, mtime) index for existence check.
+        sa.Index(
+            'ix_ofp_file_original_path_mtime',
+            'original_path',
+            'mtime',
+            unique = False,
+        ),
+    )
+
     id = sa.Column(sa.Uuid, primary_key=True, default=uuid.uuid4)
 
     original_path = sa.Column(
