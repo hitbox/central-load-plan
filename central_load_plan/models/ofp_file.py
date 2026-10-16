@@ -5,6 +5,7 @@ import logging
 
 from datetime import timedelta
 from datetime import datetime
+from datetime import timezone
 
 import sqlalchemy as sa
 
@@ -174,7 +175,17 @@ class OFPFile(db.Model):
 
     scheduled_departure_time = sa.Column(sa.DateTime(timezone=True))
 
+    @property
+    def scheduled_departure_time_utc(self):
+        if self.scheduled_departure_time:
+            return self.scheduled_departure_time.astimezone(timezone.utc)
+
     estimated_departure_time = sa.Column(sa.DateTime(timezone=True))
+
+    @property
+    def estimated_departure_time_utc(self):
+        if self.estimated_departure_time:
+            return self.estimated_departure_time.astimezone(timezone.utc)
 
     planned_payload = sa.Column(sa.Integer)
 
@@ -252,7 +263,7 @@ class OFPFile(db.Model):
 
     @property
     def estimated_arrival_time(self):
-        return self.estimated_departure_time + timedelta(
+        return self.estimated_departure_time_utc + timedelta(
             hours = self.estimated_block_time.hour,
             minutes = self.estimated_block_time.minute,
         )
@@ -283,6 +294,7 @@ class OFPFile(db.Model):
         'estimated_arrival_time',
         'estimated_block_time',
         'estimated_departure_time',
+        'estimated_departure_time_utc',
         'estimated_time_enroute',
         'flight_identifier',
         'flight_identifier_first_three',
@@ -310,6 +322,7 @@ class OFPFile(db.Model):
         'ramp_fuel',
         'ramp_fuel_unit',
         'scheduled_departure_time',
+        'scheduled_departure_time_utc',
         'takeoff_fuel',
         'takeoff_fuel_unit',
         'taxi_fuel',
