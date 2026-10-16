@@ -57,10 +57,6 @@ class OFPFile(db.Model):
         comment = 'os.path.getmtime value as datetime',
     )
 
-    @property
-    def mtime_age(self):
-        return time.time() - self.mtime
-
     archive_path = sa.Column(
         sa.String,
         nullable = True,
