@@ -124,12 +124,11 @@ def add_jobs_for_path(path, flight_plan_parser, flight_plan_schema):
     High-level convenience function to run jobs against a new path.
     """
     # incoming paths are named simply and can often be duplicated later.
-    exists = instance_from_path(path)
-    if exists:
-        mtime = get_mtime_utc(path)
+    ofp_file = instance_from_path(path)
+    if ofp_file:
         logger.info(
             'skip adding jobs, OFPFile already exists for path=%s, mtime=%s',
-            path, mtime)
+            ofp_file.original_path, ofp_file.mtime)
         return
 
     jobs = build_jobs(
