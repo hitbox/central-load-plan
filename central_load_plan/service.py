@@ -25,8 +25,6 @@ from central_load_plan.schema import OperationalFlightPlanSchema
 
 logging_required = {'loggers', 'handlers', 'formatters'}
 
-logger = logging.getLogger(__name__)
-
 def build_jobs(path, flight_plan_parser, flight_plan_schema):
     """
     Parse a single file path and build Job objects.
@@ -126,6 +124,7 @@ def add_jobs_for_path(path, flight_plan_parser, flight_plan_schema):
     High-level convenience function to run jobs against a new path.
     """
     # incoming paths are named simply and can often be duplicated later.
+    logger = logging.getLogger('central_load_plan')
     ofp_file = instance_from_path(path)
     if ofp_file:
         logger.info(
@@ -228,6 +227,8 @@ def main(argv=None):
 
     # Configure environment for flask app creation.
     update_environment_from_config_for_app(cp)
+
+    logger = logging.getLogger('central_load_plan')
 
     # Call service function with flask application context for database.
     app = create_app()
