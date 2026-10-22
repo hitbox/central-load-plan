@@ -195,9 +195,10 @@ class FlightPlanParser(Parser):
         './ns:WeightHeader/ns:Load/ns:EstimatedWeight/ns:Value',
         attr = 'unit',
     )
+
     leg_departure_date_utc = FlightPlanXMLField(
         './ns:M633SupplementaryHeader/ns:Flight',
-        attr='scheduledTimeOfDeparture',
+        attr = 'scheduledTimeOfDeparture',
     )
 
     flight_identifier = FlightPlanXMLField(

@@ -65,8 +65,10 @@ def work(args, cp):
     sleep_seconds = work_cp.getfloat('sleep_seconds', fallback=1.0)
     logger = logging.getLogger('central_load_plan.service.work')
 
+    logger.info('starting work loop')
+
     while True:
-        files_with_pending_jobs = (
+        files_with_pending_jobs_query = (
             sa.select(OFPFile)
             .where(
                 OFPFile.archive_path.is_(None),
@@ -78,15 +80,14 @@ def work(args, cp):
                 sa.orm.selectinload(OFPFile.jobs)
             )
         )
-        sql = files_with_pending_jobs.compile(
-            db.engine,
-            compile_kwargs = {
-                'literal_binds': True,
-            },
-        )
-        logger.info('%s', sql)
+        #sql = files_with_pending_jobs_query.compile(
+        #    db.engine,
+        #    compile_kwargs = {
+        #        'literal_binds': True,
+        #    },
+        #)
 
-        for ofp_file in db.session.scalars(files_with_pending_jobs):
+        for ofp_file in db.session.scalars(files_with_pending_jobs_query):
             for job in ofp_file.jobs:
                 if job.completed_at is None:
                     job.do_work()
