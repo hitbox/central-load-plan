@@ -170,6 +170,17 @@ def watch(args, cp):
         logger.info('sleeping %s seconds', sleep_seconds)
         time.sleep(sleep_seconds)
 
+def exercise_logging(args, cp):
+    """
+    Command to troubleshoot logging with a quick series of logging calls.
+    """
+    for loggername in args.loggers:
+        logger = logging.getLogger(loggername)
+        logger.info('information message!')
+        logger.debug('debug message!')
+        logger.warning('warning message!')
+        logger.error('ERROR message!')
+
 def make_argument_parser():
     parser = argparse.ArgumentParser(
         description =
@@ -181,6 +192,14 @@ def make_argument_parser():
 
     # Add subparsers for `watch` and `work`.
     subparsers = parser.add_subparsers()
+
+    parser_exercise_logging = subparsers.add_parser(
+        'exercise-logging',
+        description = exercise_logging.__doc__,
+        help = 'Exercise logging config',
+    )
+    parser_exercise_logging.add_argument('-l', '--logger', dest='loggers', action='append', required=True)
+    parser_exercise_logging.set_defaults(func=exercise_logging)
 
     parser_watch = subparsers.add_parser(
         'watch',
