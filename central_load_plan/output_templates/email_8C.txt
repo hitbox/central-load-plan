@@ -5,7 +5,7 @@
 
 {%- block flight %}
 
-LEG DEPARTURE DATE (UTC): {{ leg_departure_date_utc.strftime('%d%b%y (%H%MZ)').upper() }} VER NO: {{ flight_plan_id }}
+LEG DEPARTURE DATE (UTC): {{ leg_departure_date_utc_for_real.strftime('%d%b%y (%H%MZ)').upper() }} VER NO: {{ flight_plan_id }}
 FLT #  ORIG  DEST  TAIL #  STE   STD      ETE    PLANNED BLOCK TIME
 {# "FLT #" #}{{ '%-7s'|format(flight_number) -}}
 {# ORIG #}{{ '%-6s'|format(ofp_file.origin_airport.iata_code) -}}

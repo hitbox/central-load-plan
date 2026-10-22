@@ -86,6 +86,11 @@ class OFPFile(db.Model):
         nullable = False,
     )
 
+    @property
+    def leg_departure_date_utc_for_real(self):
+        if self.leg_departure_date_utc:
+            return self.leg_departure_date_utc.astimezone(timezone.utc)
+
     flight_origin_date = sa.Column(sa.Date)
 
     version_number = sa.Column(sa.String)
@@ -304,6 +309,7 @@ class OFPFile(db.Model):
         'landing_fuel',
         'landing_fuel_unit',
         'leg_departure_date_utc',
+        'leg_departure_date_utc_for_real',
         'max_payload',
         'mldg',
         'mldg_unit',
