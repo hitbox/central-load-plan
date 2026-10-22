@@ -52,7 +52,8 @@ def build_jobs(path, flight_plan_parser, flight_plan_schema):
     )
 
     for job_template in job_templates:
-        jobs.append(job_template.make_job(ofp_file))
+        if job_template.is_enabled:
+            jobs.append(job_template.make_job(ofp_file))
 
     return jobs
 

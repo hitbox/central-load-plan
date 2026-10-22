@@ -31,6 +31,8 @@ class JobTemplate(db.Model):
 
     name = sa.Column(sa.String, nullable=False, unique=True)
 
+    is_enabled = sa.Column(sa.Boolean, nullable=False)
+
     ofp_condition_id = sa.Column(
         sa.ForeignKey('ofp_condition.id'),
         nullable = False,
